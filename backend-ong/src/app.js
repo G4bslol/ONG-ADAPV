@@ -19,7 +19,10 @@ import authRoutes from "./routes/auth.route.js";
 
 
 const app = express();
-app.use(cors());
+app.use(cors({
+  origin: "http://localhost:5173", // domínio do frontend
+  credentials: true // permite envio de cookies / auth headers
+}));
 app.use(express.json());
 
 

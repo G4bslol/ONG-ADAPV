@@ -1,23 +1,44 @@
-import { useState } from 'react'
-import './styles/global.css'
+import "bootstrap/dist/css/bootstrap.min.css";
+import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
+import AuthProvider from './components/AuthProvider.jsx';
+import ProtectedRoute from "./components/ProtectedRoute";
+import Navbar from './components/Navbar.jsx';
+import Login from "./pages/Login";
+import Home from "./pages/Home";
 
 function App() {
-  const [count, setCount] = useState(0)
 
   return (
     <>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
+      <Router>
+        <AuthProvider>
+          <div className="App">
+            <Navbar />
+
+            <Routes>
+              <Route path="/login" element={<Login />} />
+
+              <Route path="/" element={
+                // <ProtectedRoute>
+                  <Home />
+                // </ProtectedRoute>
+              } />
+
+              {/* <Route path="/produtos" element={
+                <ProtectedRoute roles={['admin', 'operador']}>
+                  <ProdutosPage />
+                </ProtectedRoute>
+              } /> */}
+
+              {/* <Route path="/pedidos" element={
+                <ProtectedRoute roles={['admin', 'operador']}>
+                  <PedidosPage />
+                </ProtectedRoute>
+              } /> */}
+            </Routes>
+          </div>
+        </AuthProvider>
+      </Router>
     </>
   )
 }
