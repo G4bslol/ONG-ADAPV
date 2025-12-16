@@ -138,6 +138,7 @@ Certifique-se de que:
 ## 📄 Documentação
 
 Arquivos adicionais em `docs/`:
+- TRABALHO ERS ONG-ADAPV.pdf
 - Orientações.txt
 - Rotas_Backend_Ong.txt
 
