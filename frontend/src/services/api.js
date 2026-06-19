@@ -36,7 +36,7 @@ class ApiService {
             return await response.json();
 
         } catch (error) {
-            console.error('Erro na requisição', error);
+            console.error('Erro na requisição: ', error);
             throw error;
         }
     }

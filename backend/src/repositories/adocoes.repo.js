@@ -153,7 +153,6 @@ export async function getRelatorioAdocoes() {
         INNER JOIN racas r ON an.racasId = r.id
         INNER JOIN especies e ON r.especiesId = e.id
         INNER JOIN pessoas p ON ad.pessoaId = p.id
-        WHERE an.isDeleted = FALSE AND p.isDeleted = FALSE
         ORDER BY ad.dataAdocao DESC
     `);
     return rows;

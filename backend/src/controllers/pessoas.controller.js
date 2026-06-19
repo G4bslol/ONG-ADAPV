@@ -10,10 +10,10 @@ import bcrypt from 'bcrypt';
 
 export async function createPessoaController(req, res) {
     try {
-        
+
         const { senha, cpf, ...dadosPessoa } = req.body;
 
-        
+
         if (!senha) {
             return res.status(400).json({ error: "A 'senha' é obrigatória." });
         }
@@ -31,36 +31,36 @@ export async function createPessoaController(req, res) {
         if (pessoaExistente) {
             return res.status(409).json({ error: "CPF já cadastrado." });
         }
-        
+
         const salt = await bcrypt.genSalt(10);
         const senhaHash = await bcrypt.hash(senha, salt);
 
         // Se o tipo não foi enviado, define como 'User' (cadastro pelo login)
         // Se foi enviado, usa o valor (cadastro pela página de Pessoas)
         const tipo = dadosPessoa.tipo || 'User';
-        
-        const novoId = await createPessoa({ 
+
+        const novoId = await createPessoa({
             ...dadosPessoa,
             cpf,
-            senha: senhaHash, 
-            tipo: tipo 
+            senha: senhaHash,
+            tipo: tipo
         });
 
         res.status(201).json({ id: novoId });
 
     } catch (error) {
         console.error("Erro em createPessoaController:", error);
-        
+
         // Tratar erro de CPF duplicado (caso a validação anterior falhe)
         if (error.code === 'ER_DUP_ENTRY') {
             return res.status(409).json({ error: "CPF já cadastrado." });
         }
-        
+
         // Tratar erro de campo NULL
         if (error.code === 'ER_BAD_NULL_ERROR') {
             return res.status(400).json({ error: "Alguns campos obrigatórios não foram preenchidos." });
         }
-        
+
         res.status(500).json({ error: "Erro ao criar pessoa" });
     }
 }
@@ -80,11 +80,11 @@ export async function getPessoaByIdController(req, res) {
         const { id } = req.params;
         const pessoa = await getPessoaById(id);
 
-        
+
         if (!pessoa) {
             return res.status(404).json({ error: "Pessoa não encontrada" });
         }
-        
+
         res.status(200).json(pessoa);
     } catch (error) {
         console.error("Erro em getPessoaByIdController:", error);
@@ -97,19 +97,19 @@ export async function updatePessoaController(req, res) {
         const { id } = req.params;
         const { nome, cpf, dataNasc, telefone, email, cep, logradouro, numero, complemento, bairro, cidade, estado, tipo } = req.body;
 
-       
+
         if (!nome || !cpf) {
             return res.status(400).json({ error: "Dados incompletos. Nome e CPF são obrigatórios." });
         }
-       
+
         const affectedRows = await updatePessoa(id, { nome, cpf, dataNasc, telefone, email, cep, logradouro, numero, complemento, bairro, cidade, estado, tipo });
 
-      
+
         if (affectedRows === 0) {
             return res.status(404).json({ error: "Pessoa não encontrada para atualizar" });
         }
-       
-        res.status(200).json({ id: id, ...req.body }); 
+
+        res.status(200).json({ id: id, ...req.body });
 
     } catch (error) {
         console.error("Erro em updatePessoaController:", error);
@@ -123,19 +123,26 @@ export async function updatePessoaController(req, res) {
 export async function deletePessoaController(req, res) {
     try {
         const { id } = req.params;
-        
-        
+
+
         const affectedRows = await deletePessoa(id);
 
-        
+
         if (affectedRows === 0) {
             return res.status(404).json({ error: "Pessoa não encontrada para deletar" });
         }
-       
-        res.status(204).send();
+
+        return res.json({
+            success: true,
+            message: "Pessoa deletada com sucesso",
+            id
+        });
 
     } catch (error) {
-        console.error("Erro em deletePessoaController:", error);
-        res.status(500).json({ error: "Erro ao deletar pessoa" });
+        return res.status(500).json({
+            success: false,
+            message: "Erro ao deletar espécie",
+            error: error
+        });
     }
 }

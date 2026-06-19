@@ -1,0 +1,1108 @@
+import pool from "../config/db.js";
+
+
+
+export async function createAdocao(adocaoData) {
+    const { animalId, pessoaId, dataAdocao, termoAssinado, observacoes } =
+        adocaoData;
+
+  
+    const connection = await pool.getConnection();
+
+    try {
+       
+        await connection.beginTransaction();
+
+        
+        const [adocaoResult] = await connection.query(
+            `INSERT INTO adocoes (animalId, pessoaId, dataAdocao, termoAssinado, observacoes) 
+             VALUES (?, ?, ?, ?, ?)`,
+            [animalId, pessoaId, dataAdocao, termoAssinado, observacoes]
+        );
+        const newAdocaoId = adocaoResult.insertId;
+
+       
+        await connection.query(
+            "UPDATE animais SET pessoaId = ? WHERE id = ?",
+            [pessoaId, animalId]
+        );
+
+       
+        await connection.commit();
+        return newAdocaoId;
+
+    } catch (error) {
+        
+        await connection.rollback();
+        console.error("Erro na transação createAdocao:", error);
+        throw error; 
+    
+    } finally {
+        
+        connection.release();
+    }
+}
+
+
+export async function getAdocoes() {
+    const [rows] = await pool.query(`
+        SELECT 
+            ad.*,
+            an.nome AS animalNome,
+            p.nome AS adotanteNome,
+            p.cpf AS adotanteCpf
+        FROM adocoes ad
+        JOIN animais an ON ad.animalId = an.id
+        JOIN pessoas p ON ad.pessoaId = p.id
+        ORDER BY ad.dataAdocao DESC
+    `);
+    return rows;
+}
+
+
+export async function getAdocaoById(id) {
+    const [rows] = await pool.query(
+        `
+        SELECT 
+            ad.*,
+            an.nome AS animalNome,
+            p.nome AS adotanteNome,
+            p.cpf AS adotanteCpf
+        FROM adocoes ad
+        JOIN animais an ON ad.animalId = an.id
+        JOIN pessoas p ON ad.pessoaId = p.id
+        WHERE ad.id = ?
+    `,
+        [id]
+    );
+    return rows[0];
+}
+
+
+export async function getAdocaoByAnimalId(animalId) {
+    const [rows] = await pool.query(
+        "SELECT * FROM adocoes WHERE animalId = ?",
+        [animalId]
+    );
+    return rows[0];
+}
+
+
+export async function getAdocoesByPessoaId(pessoaId) {
+    const [rows] = await pool.query(
+        `
+        SELECT 
+            ad.*,
+            an.nome AS animalNome,
+            an.fotoUrl AS animalFotoUrl,
+            an.cor AS animalCor,
+            an.dataNasc AS animalDataNasc,
+            r.nome AS racaNome,
+            e.nome AS especieNome
+        FROM adocoes ad
+        JOIN animais an ON ad.animalId = an.id
+        JOIN racas r ON an.racasId = r.id
+        JOIN especies e ON r.especiesId = e.id
+        WHERE ad.pessoaId = ?
+        ORDER BY ad.dataAdocao DESC
+    `,
+        [pessoaId]
+    );
+    return rows;
+}
+
+
+export async function updateAdocao(id, adocaoData) {
+    const { termoAssinado, observacoes } = adocaoData;
+
+    const [result] = await pool.query(
+        "UPDATE adocoes SET termoAssinado = ?, observacoes = ? WHERE id = ?",
+        [termoAssinado, observacoes, id]
+    );
+    return result.affectedRows;
+}
+
+
+export async function deleteAdocao(id) {
+    const [result] = await pool.query("DELETE FROM adocoes WHERE id = ?", [id]);
+    return result.affectedRows;
+}
+
+// Relatório de adoções
+export async function getRelatorioAdocoes() {
+    const [rows] = await pool.query(`
+        SELECT 
+            ad.id AS adocaoId,
+            ad.dataAdocao,
+            ad.termoAssinado,
+            ad.observacoes,
+            an.id AS animalId,
+            an.nome AS animalNome,
+            an.cor AS animalCor,
+            an.dataNasc AS animalDataNasc,
+            an.fotoUrl AS animalFotoUrl,
+            r.nome AS racaNome,
+            e.nome AS especieNome,
+            p.id AS pessoaId,
+            p.nome AS adotanteNome,
+            p.cpf AS adotanteCpf,
+            p.email AS adotanteEmail,
+            p.telefone AS adotanteTelefone
+        FROM adocoes ad
+        INNER JOIN animais an ON ad.animalId = an.id
+        INNER JOIN racas r ON an.racasId = r.id
+        INNER JOIN especies e ON r.especiesId = e.id
+        INNER JOIN pessoas p ON ad.pessoaId = p.id
+        WHERE an.isDeleted = FALSE AND p.isDeleted = FALSE
+        ORDER BY ad.dataAdocao DESC
+    `);
+    return rows;
+}
+
+import pool from "../config/db.js";
+
+
+export async function createAnimal(animal) {
+    
+    const { nome, cor, dataNasc, racasId, pessoaId, fotoUrl } = animal; 
+
+    const [result] = await pool.query(
+        `INSERT INTO animais (nome, cor, dataNasc, racasId, pessoaId, fotoUrl, isDeleted) 
+         VALUES (?, ?, ?, ?, ?, ?, FALSE)`,
+        [nome, cor, dataNasc, racasId, pessoaId, fotoUrl] // fotoUrl pode ser null
+    );
+    return result.insertId;
+}
+
+
+export async function getAnimais() {
+    const [rows] = await pool.query(`
+        SELECT 
+            a.id,
+            a.nome,
+            a.cor,
+            a.dataNasc,
+            a.fotoUrl,
+            a.pessoaId, -- Adicionado para verificar se tem tutor
+            r.nome AS racaNome,
+            e.nome AS especieNome
+        FROM animais a
+        JOIN racas r ON a.racasId = r.id
+        JOIN especies e ON r.especiesId = e.id
+        WHERE a.isDeleted = FALSE AND r.isDeleted = FALSE
+    `);
+    return rows;
+}
+
+
+export async function getAnimalById(id) {
+    const [rows] = await pool.query(
+        `
+        SELECT 
+            a.*, -- 'a.*' já inclui a nova coluna 'fotoUrl'
+            r.nome AS racaNome,
+            e.nome AS especieNome,
+            p.nome AS tutorNome
+        FROM animais a
+        JOIN racas r ON a.racasId = r.id
+        JOIN especies e ON r.especiesId = e.id
+        LEFT JOIN pessoas p ON a.pessoaId = p.id 
+        WHERE a.id = ? AND a.isDeleted = FALSE
+    `,
+        [id]
+    );
+    return rows[0];
+}
+
+
+export async function updateAnimal(id, animal) {
+  
+    const { nome, cor, dataNasc, racasId, pessoaId, fotoUrl } = animal;
+
+    const [result] = await pool.query(
+        `UPDATE animais SET 
+         nome = ?, cor = ?, dataNasc = ?, racasId = ?, pessoaId = ?, fotoUrl = ?
+         WHERE id = ?`,
+        [nome, cor, dataNasc, racasId, pessoaId, fotoUrl, id]
+    );
+    return result.affectedRows;
+}
+
+
+export async function deleteAnimal(id) {
+    const [result] = await pool.query(
+        "UPDATE animais SET isDeleted = TRUE WHERE id = ?",
+        [id]
+    );
+    return result.affectedRows;
+}
+
+import pool from "../config/db.js";
+
+
+export async function createAtendimento(atendimento) {
+    const {
+        animalId,
+        veterinarioId,
+        dataAtendimento,
+        tipo,
+        descricao,
+        custo,
+    } = atendimento;
+
+    const [result] = await pool.query(
+        `INSERT INTO atendimentos 
+         (animalId, veterinarioId, dataAtendimento, tipo, descricao, custo) 
+         VALUES (?, ?, ?, ?, ?, ?)`,
+        [animalId, veterinarioId, dataAtendimento, tipo, descricao, custo]
+    );
+    return result.insertId;
+}
+
+
+export async function getAtendimentosByAnimalId(animalId) {
+    const [rows] = await pool.query(
+        `
+        SELECT 
+            at.*, 
+            an.nome AS animalNome,
+            p.nome AS veterinarioNome,
+            v.CRMV
+        FROM atendimentos at
+        JOIN animais an ON at.animalId = an.id
+        LEFT JOIN veterinarios v ON at.veterinarioId = v.id
+        LEFT JOIN pessoas p ON v.pessoaId = p.id
+        WHERE at.animalId = ?
+        ORDER BY at.dataAtendimento DESC
+    `,
+        [animalId]
+    );
+    
+    return rows;
+}
+
+
+export async function getAtendimentoById(id) {
+    const [rows] = await pool.query(
+        `
+        SELECT 
+            at.*, 
+            an.nome AS animalNome,
+            p.nome AS veterinarioNome
+        FROM atendimentos at
+        JOIN animais an ON at.animalId = an.id
+        LEFT JOIN veterinarios v ON at.veterinarioId = v.id
+        LEFT JOIN pessoas p ON v.pessoaId = p.id
+        WHERE at.id = ?
+    `,
+        [id]
+    );
+    return rows[0];
+}
+
+
+export async function updateAtendimento(id, atendimento) {
+    const {
+        veterinarioId,
+        dataAtendimento,
+        tipo,
+        descricao,
+        custo,
+    } = atendimento;
+
+    const [result] = await pool.query(
+        `UPDATE atendimentos SET 
+         veterinarioId = ?, dataAtendimento = ?, tipo = ?, descricao = ?, custo = ?
+         WHERE id = ?`,
+        [veterinarioId, dataAtendimento, tipo, descricao, custo, id]
+    );
+    return result.affectedRows;
+}
+
+
+export async function deleteAtendimento(id) {
+    const [result] = await pool.query(
+        "DELETE FROM atendimentos WHERE id = ?",
+        [id]
+    );
+    return result.affectedRows;
+}
+
+// Relatório de atendimentos
+export async function getRelatorioAtendimentos() {
+    const [rows] = await pool.query(`
+        SELECT 
+            at.id AS atendimentoId,
+            at.dataAtendimento,
+            at.tipo,
+            at.descricao,
+            at.custo,
+            an.id AS animalId,
+            an.nome AS animalNome,
+            an.cor AS animalCor,
+            an.dataNasc AS animalDataNasc,
+            an.fotoUrl AS animalFotoUrl,
+            r.nome AS racaNome,
+            e.nome AS especieNome,
+            p.id AS veterinarioId,
+            p.nome AS veterinarioNome,
+            v.CRMV AS veterinarioCRMV
+        FROM atendimentos at
+        INNER JOIN animais an ON at.animalId = an.id
+        LEFT JOIN racas r ON an.racasId = r.id
+        LEFT JOIN especies e ON r.especiesId = e.id
+        LEFT JOIN veterinarios v ON at.veterinarioId = v.id
+        LEFT JOIN pessoas p ON v.pessoaId = p.id
+        WHERE an.isDeleted = FALSE
+        ORDER BY at.dataAtendimento DESC
+    `);
+    return rows;
+}
+
+
+
+import pool from "../config/db.js";
+
+export async function createDoacao(doacaoData) {
+    const {
+        pessoaId,
+        dataDoacao,
+        tipo,
+        valor, 
+        descricao,
+        itens,
+    } = doacaoData;
+
+    
+    const connection = await pool.getConnection();
+
+    try {
+        
+        await connection.beginTransaction();
+
+    
+        const [doacaoResult] = await connection.query(
+            "INSERT INTO doacoes (dataDoacao, tipo, valor, descricao, isDeleted) VALUES (?, ?, ?, ?, FALSE)",
+            [dataDoacao, tipo, valor, descricao]
+        );
+        const newDoacaoId = doacaoResult.insertId;
+
+            await connection.query(
+                "INSERT INTO pessoas_doacoes (pessoaId, doacaoId) VALUES (?, ?)",
+                [pessoaId, newDoacaoId]
+            );
+        
+
+        
+        if (tipo === "Itens" && itens && itens.length > 0) {
+            for (const item of itens) {
+                // Se tiver recursoId, usar a estrutura antiga (compatibilidade)
+                if (item.recursoId) {
+                    await connection.query(
+                        "INSERT INTO doacoes_itens (doacaoId, recursoId, quantidade) VALUES (?, ?, ?)",
+                        [newDoacaoId, item.recursoId, item.quantidade]
+                    );
+                    
+                    await connection.query(
+                        "UPDATE recursos SET quantidade = quantidade + ? WHERE id = ?",
+                        [item.quantidade, item.recursoId]
+                    );
+                } else {
+                    // Nova estrutura: salvar nome, valor e quantidade diretamente
+                    // Usando recursoId como NULL e armazenando dados na descrição ou em campos adicionais
+                    // Por enquanto, vamos salvar na tabela com recursoId NULL e usar um campo JSON ou texto
+                    await connection.query(
+                        "INSERT INTO doacoes_itens (doacaoId, recursoId, quantidade, nomeItem, valorItem) VALUES (?, NULL, ?, ?, ?)",
+                        [newDoacaoId, item.quantidade, item.nome, item.valor]
+                    );
+                }
+            }
+        }
+
+       
+        await connection.commit();
+        return newDoacaoId; 
+
+    } catch (error) {
+       
+        await connection.rollback();
+        console.error("Erro na transação createDoacao:", error);
+        throw error; 
+    
+    } finally {
+        
+        connection.release();
+    }
+}
+
+
+export async function getDoacoes() {
+    const [rows] = await pool.query(`
+        SELECT 
+            d.*, 
+            p.nome AS doadorNome,
+            p.id AS pessoaId
+        FROM doacoes d
+        LEFT JOIN pessoas_doacoes pd ON d.id = pd.doacaoId
+        LEFT JOIN pessoas p ON pd.pessoaId = p.id
+        WHERE d.isDeleted = FALSE
+        ORDER BY d.dataDoacao DESC
+    `);
+    
+    // Para cada doação de itens, buscar os itens
+    for (const doacao of rows) {
+        if (doacao.tipo === 'Itens') {
+            const [itensRows] = await pool.query(`
+                SELECT 
+                    COALESCE(r.nome, di.nomeItem) AS nome,
+                    COALESCE(r.valor, di.valorItem) AS valor,
+                    di.quantidade,
+                    r.id AS recursoId
+                FROM doacoes_itens di
+                LEFT JOIN recursos r ON di.recursoId = r.id
+                WHERE di.doacaoId = ?
+            `, [doacao.id]);
+            
+            doacao.itens = itensRows.map(item => ({
+                nome: item.nome,
+                valor: parseFloat(item.valor) || 0,
+                quantidade: parseInt(item.quantidade) || 0,
+                recursoId: item.recursoId || null
+            }));
+        }
+    }
+    
+    return rows;
+}
+
+
+export async function getDoacaoById(id) {
+    
+    const [doacaoRows] = await pool.query(`
+        SELECT 
+            d.*, 
+            p.nome AS doadorNome,
+            p.id AS doadorId
+        FROM doacoes d
+        LEFT JOIN pessoas_doacoes pd ON d.id = pd.doacaoId
+        LEFT JOIN pessoas p ON pd.pessoaId = p.id
+        WHERE d.id = ? AND d.isDeleted = FALSE
+    `, [id]);
+
+    const doacao = doacaoRows[0];
+    if (!doacao) return undefined; 
+
+    
+    if (doacao.tipo === 'Itens') {
+        // Buscar itens que podem ser de recursos ou itens manuais
+        const [itensRows] = await pool.query(`
+            SELECT 
+                COALESCE(r.nome, di.nomeItem) AS nome,
+                COALESCE(r.valor, di.valorItem) AS valor,
+                di.quantidade,
+                r.id AS recursoId
+            FROM doacoes_itens di
+            LEFT JOIN recursos r ON di.recursoId = r.id
+            WHERE di.doacaoId = ?
+        `, [id]);
+        
+        // Formatar itens para o formato esperado
+        doacao.itens = itensRows.map(item => ({
+            nome: item.nome,
+            valor: parseFloat(item.valor) || 0,
+            quantidade: parseInt(item.quantidade) || 0,
+            recursoId: item.recursoId || null
+        }));
+    }
+
+    return doacao;
+}
+
+
+export async function updateDoacao(id, doacaoData) {
+    const {
+        dataDoacao,
+        tipo,
+        valor,
+        descricao,
+        itens,
+    } = doacaoData;
+
+    const connection = await pool.getConnection();
+
+    try {
+        await connection.beginTransaction();
+
+        // Atualizar dados da doação
+        await connection.query(
+            "UPDATE doacoes SET dataDoacao = ?, tipo = ?, valor = ?, descricao = ? WHERE id = ?",
+            [dataDoacao, tipo, valor, descricao, id]
+        );
+
+        // Se for doação de itens, atualizar os itens
+        if (tipo === "Itens" && itens && itens.length > 0) {
+            // Deletar itens antigos
+            await connection.query(
+                "DELETE FROM doacoes_itens WHERE doacaoId = ?",
+                [id]
+            );
+
+            // Inserir novos itens
+            for (const item of itens) {
+                if (item.recursoId) {
+                    await connection.query(
+                        "INSERT INTO doacoes_itens (doacaoId, recursoId, quantidade) VALUES (?, ?, ?)",
+                        [id, item.recursoId, item.quantidade]
+                    );
+                    
+                    await connection.query(
+                        "UPDATE recursos SET quantidade = quantidade + ? WHERE id = ?",
+                        [item.quantidade, item.recursoId]
+                    );
+                } else {
+                    await connection.query(
+                        "INSERT INTO doacoes_itens (doacaoId, recursoId, quantidade, nomeItem, valorItem) VALUES (?, NULL, ?, ?, ?)",
+                        [id, item.quantidade, item.nome, item.valor]
+                    );
+                }
+            }
+        }
+
+        await connection.commit();
+        return 1; // Sucesso
+
+    } catch (error) {
+        await connection.rollback();
+        console.error("Erro na transação updateDoacao:", error);
+        throw error;
+    } finally {
+        connection.release();
+    }
+}
+
+export async function deleteDoacao(id) {
+    const [result] = await pool.query(
+        "UPDATE doacoes SET isDeleted = TRUE WHERE id = ?",
+        [id]
+    );
+    return result.affectedRows;
+}
+
+
+export async function getDoacoesByPessoa(pessoaId) {
+    const [rows] = await pool.query(`
+        SELECT 
+            d.*,
+            p.nome AS doadorNome
+        FROM doacoes d
+        JOIN pessoas_doacoes pd ON d.id = pd.doacaoId
+        LEFT JOIN pessoas p ON pd.pessoaId = p.id
+        WHERE pd.pessoaId = ? AND d.isDeleted = FALSE
+        ORDER BY d.dataDoacao DESC
+    `, [pessoaId]);
+    
+    // Buscar itens de cada doação
+    for (const doacao of rows) {
+        if (doacao.tipo === 'Itens') {
+            const [itensRows] = await pool.query(`
+                SELECT 
+                    COALESCE(r.nome, di.nomeItem) AS nome,
+                    COALESCE(r.valor, di.valorItem) AS valor,
+                    di.quantidade
+                FROM doacoes_itens di
+                LEFT JOIN recursos r ON di.recursoId = r.id
+                WHERE di.doacaoId = ?
+            `, [doacao.id]);
+            
+            doacao.itens = itensRows.map(item => ({
+                nome: item.nome,
+                valor: parseFloat(item.valor) || 0,
+                quantidade: parseInt(item.quantidade) || 0
+            }));
+        }
+    }
+    
+    return rows;
+}
+
+
+export async function getDoacoesByRecurso(recursoId) {
+    const [rows] = await pool.query(`
+        SELECT d.*, di.quantidade
+        FROM doacoes d
+        JOIN doacoes_itens di ON d.id = di.doacaoId
+        WHERE di.recursoId = ? AND d.isDeleted = FALSE
+        ORDER BY d.dataDoacao DESC
+    `, [recursoId]);
+    return rows;
+}
+
+// Relatório de doações agrupado por pessoa com detalhes
+export async function getRelatorioDoacoes() {
+    // Primeiro buscar todas as doações com detalhes
+    const [doacoesRows] = await pool.query(`
+        SELECT 
+            d.id AS doacaoId,
+            d.dataDoacao,
+            d.tipo,
+            d.valor,
+            d.descricao,
+            p.id AS pessoaId,
+            p.nome AS pessoaNome,
+            p.cpf,
+            p.email
+        FROM doacoes d
+        INNER JOIN pessoas_doacoes pd ON d.id = pd.doacaoId
+        INNER JOIN pessoas p ON pd.pessoaId = p.id
+        WHERE d.isDeleted = FALSE AND p.isDeleted = FALSE
+        ORDER BY p.nome ASC, d.dataDoacao DESC
+    `);
+
+    // Buscar itens de cada doação
+    for (const doacao of doacoesRows) {
+        if (doacao.tipo === 'Itens') {
+            const [itensRows] = await pool.query(`
+                SELECT 
+                    COALESCE(r.nome, di.nomeItem) AS nome,
+                    COALESCE(r.valor, di.valorItem) AS valor,
+                    di.quantidade
+                FROM doacoes_itens di
+                LEFT JOIN recursos r ON di.recursoId = r.id
+                WHERE di.doacaoId = ?
+            `, [doacao.doacaoId]);
+            
+            doacao.itens = itensRows.map(item => ({
+                nome: item.nome,
+                valor: parseFloat(item.valor) || 0,
+                quantidade: parseInt(item.quantidade) || 0
+            }));
+        }
+    }
+
+    // Agrupar por pessoa
+    const pessoasMap = new Map();
+    
+    doacoesRows.forEach(doacao => {
+        if (!pessoasMap.has(doacao.pessoaId)) {
+            pessoasMap.set(doacao.pessoaId, {
+                pessoaId: doacao.pessoaId,
+                pessoaNome: doacao.pessoaNome,
+                cpf: doacao.cpf,
+                email: doacao.email,
+                totalDoacoes: 0,
+                valorTotalMonetario: 0,
+                doacoes: []
+            });
+        }
+        
+        const pessoa = pessoasMap.get(doacao.pessoaId);
+        pessoa.totalDoacoes++;
+        
+        if (doacao.tipo === 'Monetária' || doacao.tipo === 'Monetaria') {
+            pessoa.valorTotalMonetario += parseFloat(doacao.valor) || 0;
+        }
+        
+        pessoa.doacoes.push({
+            id: doacao.doacaoId,
+            dataDoacao: doacao.dataDoacao,
+            tipo: doacao.tipo,
+            valor: doacao.valor,
+            descricao: doacao.descricao,
+            itens: doacao.itens || []
+        });
+    });
+
+    // Converter para array e ordenar
+    const resultado = Array.from(pessoasMap.values());
+    resultado.sort((a, b) => {
+        if (b.valorTotalMonetario !== a.valorTotalMonetario) {
+            return b.valorTotalMonetario - a.valorTotalMonetario;
+        }
+        return a.pessoaNome.localeCompare(b.pessoaNome);
+    });
+
+    return resultado;
+}
+
+import pool from "../config/db.js";
+
+
+export async function createEspecie(nome) {
+    const [result] = await pool.query(
+        "INSERT INTO especies (nome) VALUES (?)",
+        [nome]
+    );
+    return result.insertId;
+}
+
+
+export async function getEspecies() {
+    const [rows] = await pool.query(
+        "SELECT * FROM especies WHERE isDeleted = FALSE"
+    );
+    return rows;
+}
+
+
+export async function getEspecieById(id) {
+    const [rows] = await pool.query(
+        "SELECT * FROM especies WHERE id = ? AND isDeleted = FALSE",
+        [id]
+    );
+    return rows[0];
+}
+
+
+export async function updateEspecie(id, nome) {
+    const [result] = await pool.query(
+        "UPDATE especies SET nome = ? WHERE id = ?",
+        [nome, id]
+    );
+    
+    return result.affectedRows;
+}
+
+
+export async function deleteEspecie(id) {
+    const [result] = await pool.query(
+        "UPDATE especies SET isDeleted = TRUE WHERE id = ?",
+        [id]
+    );
+    return result.affectedRows;
+}
+
+import pool from "../config/db.js";
+
+
+export async function findPessoaByCpf(cpf) {
+    const [rows] = await pool.query(
+        "SELECT * FROM pessoas WHERE cpf = ? AND isDeleted = FALSE",
+        [cpf]
+    );
+    return rows[0]; 
+}
+
+
+export async function createPessoa(pessoa) {
+    const { nome, cpf, dataNasc, telefone, email, cep, logradouro, numero, complemento, bairro, cidade, estado, senha, tipo } = pessoa;
+    
+    // Incluir todos os campos que o banco exige (NOT NULL sem DEFAULT)
+    // Usar valores padrão (string vazia) quando não fornecidos
+    const query = `INSERT INTO pessoas (
+        nome, cpf, dataNasc, telefone, email, cep, logradouro, numero, complemento, bairro, cidade, estado, senha, tipo
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+    
+    const valores = [
+        nome,
+        cpf,
+        dataNasc,
+        telefone || '', // Valor padrão: string vazia
+        email || '', // Valor padrão: string vazia
+        cep || '', // Valor padrão: string vazia
+        logradouro || '', // Valor padrão: string vazia
+        numero || '', // Valor padrão: string vazia
+        complemento || '', // Valor padrão: string vazia
+        bairro || '', // Valor padrão: string vazia
+        cidade || '', // Valor padrão: string vazia
+        estado || '', // Valor padrão: string vazia
+        senha,
+        tipo || 'User'
+    ];
+    
+    const [result] = await pool.query(query, valores);
+    
+    return result.insertId;
+}
+
+export async function getPessoas() {
+   
+    const [rows] = await pool.query(
+        "SELECT * FROM pessoas WHERE isDeleted = FALSE"
+    );
+    return rows;
+}
+
+export async function getPessoaById(id) {
+   
+    const [rows] = await pool.query(
+        "SELECT * FROM pessoas WHERE id = ? AND isDeleted = FALSE", 
+        [id]
+    );
+    return rows[0];
+}
+
+export async function updatePessoa(id, pessoa) {
+    const { nome, cpf, dataNasc, telefone, email, cep, logradouro, numero, complemento, bairro, cidade, estado, tipo } = pessoa;
+    
+   const [result] = await pool.query(
+        "UPDATE pessoas SET nome = ?, cpf = ?, dataNasc = ?, telefone = ?, email = ?, cep = ?, logradouro = ?, numero = ?, complemento = ?, bairro = ?, cidade = ?, estado = ?, tipo = ? WHERE id = ?",
+        [nome, cpf, dataNasc, telefone, email, cep, logradouro, numero, complemento, bairro, cidade, estado, tipo || 'User', id]
+    );
+    return result.affectedRows;
+}
+
+export async function deletePessoa(id) {
+    const [result] = await pool.query(
+        "UPDATE pessoas SET isDeleted = TRUE WHERE id = ?", 
+        [id]
+    );
+    return result.affectedRows;
+}
+
+import pool from "../config/db.js";
+
+
+export async function createRaca(raca) {
+    const {
+        nome,
+        origem,
+        tamanho,
+        expectativaVida,
+        temperamento,
+        pelagem,
+        especiesId, 
+    } = raca;
+
+    const [result] = await pool.query(
+        `INSERT INTO racas 
+         (nome, origem, tamanho, expectativaVida, temperamento, pelagem, especiesId, isDeleted) 
+         VALUES (?, ?, ?, ?, ?, ?, ?, FALSE)`,
+        [
+            nome,
+            origem,
+            tamanho,
+            expectativaVida,
+            temperamento,
+            pelagem,
+            especiesId,
+        ]
+    );
+    return result.insertId;
+}
+
+
+export async function getRacas() {
+    const [rows] = await pool.query(`
+        SELECT 
+            r.*, 
+            e.nome AS especieNome 
+        FROM racas r
+        JOIN especies e ON r.especiesId = e.id
+        WHERE r.isDeleted = FALSE AND e.isDeleted = FALSE
+    `);
+    return rows;
+}
+
+
+export async function getRacaById(id) {
+    const [rows] = await pool.query(
+        `
+        SELECT 
+            r.*, 
+            e.nome AS especieNome 
+        FROM racas r
+        JOIN especies e ON r.especiesId = e.id
+        WHERE r.id = ? AND r.isDeleted = FALSE AND e.isDeleted = FALSE
+    `,
+        [id]
+    );
+    return rows[0];
+}
+
+
+export async function getRacasByEspecie(especieId) {
+    const [rows] = await pool.query(
+        "SELECT * FROM racas WHERE especiesId = ? AND isDeleted = FALSE",
+        [especieId]
+    );
+    return rows;
+}
+
+
+export async function updateRaca(id, raca) {
+    const {
+        nome,
+        origem,
+        tamanho,
+        expectativaVida,
+        temperamento,
+        pelagem,
+        especiesId,
+    } = raca;
+
+    const [result] = await pool.query(
+        `UPDATE racas SET 
+         nome = ?, origem = ?, tamanho = ?, expectativaVida = ?, 
+         temperamento = ?, pelagem = ?, especiesId = ? 
+         WHERE id = ?`,
+        [
+            nome,
+            origem,
+            tamanho,
+            expectativaVida,
+            temperamento,
+            pelagem,
+            especiesId,
+            id,
+        ]
+    );
+    return result.affectedRows;
+}
+
+
+export async function deleteRaca(id) {
+    const [result] = await pool.query(
+        "UPDATE racas SET isDeleted = TRUE WHERE id = ?",
+        [id]
+    );
+    return result.affectedRows;
+}
+
+import pool from "../config/db.js";
+
+export async function createRecurso(recurso){
+    const {tipo,nome,quantidade,valor,descricao } = recurso;
+    const [result] = await pool.query(
+        "INSERT INTO recursos(tipo,nome,quantidade,valor,descricao)VALUES (?, ?, ?, ?, ?)",
+        [tipo,nome,quantidade,valor || 0,descricao]
+    );
+    return result.insertId;
+}
+
+export async function getRecursos() {
+    const [rows] = await pool.query(
+        "SELECT * FROM recursos WHERE isDeleted = FALSE"
+    );
+    return rows;
+}
+
+export async function getRecursoById(id) {
+    const [rows] = await pool.query(
+        "SELECT * FROM recursos WHERE id = ? AND isDeleted = FALSE",
+        [id]
+    );
+    return rows[0];
+}
+
+export async function updateRecurso(id,recurso){
+    const {tipo,nome,quantidade,valor,descricao} = recurso;
+    const [result] = await pool.query(
+        "UPDATE recursos SET tipo = ?, nome = ?, quantidade = ?, valor = ?, descricao = ? WHERE id = ?",
+        [tipo,nome,quantidade,valor || 0,descricao,id]
+    );
+    return result.affectedRows;
+}
+
+export async function deleteRecurso(id){
+    const [result] = await pool.query(
+        "UPDATE recursos SET isDeleted = TRUE WHERE id = ?",
+        [id]
+    );
+    return result.affectedRows;
+}
+
+// Relatório de recursos
+export async function getRelatorioRecursos() {
+    const [rows] = await pool.query(`
+        SELECT 
+            r.id,
+            r.tipo,
+            r.nome,
+            r.quantidade,
+            r.valor,
+            r.descricao,
+            COALESCE(SUM(di.quantidade), 0) AS totalDoacoes,
+            COALESCE(SUM(di.quantidade * r.valor), 0) AS valorTotalDoacoes
+        FROM recursos r
+        LEFT JOIN doacoes_itens di ON r.id = di.recursoId
+        LEFT JOIN doacoes d ON di.doacaoId = d.id AND d.isDeleted = FALSE
+        WHERE r.isDeleted = FALSE
+        GROUP BY r.id, r.tipo, r.nome, r.quantidade, r.valor, r.descricao
+        ORDER BY r.tipo, r.nome
+    `);
+    return rows;
+}
+
+
+import pool from "../config/db.js";
+
+
+export async function createVeterinario(veterinario) {
+    const { pessoaId, CRMV } = veterinario;
+
+    const [result] = await pool.query(
+        "INSERT INTO veterinarios (pessoaId, CRMV, isDeleted) VALUES (?, ?, FALSE)",
+        [pessoaId, CRMV]
+    );
+    return result.insertId;
+}
+
+
+export async function getVeterinarios() {
+    const [rows] = await pool.query(`
+        SELECT 
+            v.id, 
+            v.CRMV, 
+            v.pessoaId, 
+            p.nome, 
+            p.email, 
+            p.telefone 
+        FROM veterinarios v
+        JOIN pessoas p ON v.pessoaId = p.id
+        WHERE v.isDeleted = FALSE AND p.isDeleted = FALSE
+    `);
+    return rows;
+}
+
+
+export async function getVeterinarioById(id) {
+    const [rows] = await pool.query(
+        `
+        SELECT 
+            v.id, 
+            v.CRMV, 
+            v.pessoaId, 
+            p.nome, 
+            p.email, 
+            p.telefone 
+        FROM veterinarios v
+        JOIN pessoas p ON v.pessoaId = p.id
+        WHERE v.id = ? AND v.isDeleted = FALSE AND p.isDeleted = FALSE
+    `,
+        [id]
+    );
+    return rows[0];
+}
+
+
+export async function getVeterinarioByPessoaId(pessoaId) {
+    const [rows] = await pool.query(
+        `
+        SELECT 
+            v.id, v.CRMV, v.pessoaId, p.nome 
+        FROM veterinarios v
+        JOIN pessoas p ON v.pessoaId = p.id
+        WHERE v.pessoaId = ? AND v.isDeleted = FALSE
+    `,
+        [pessoaId]
+    );
+    return rows[0];
+}
+
+
+export async function updateVeterinario(id, CRMV) {
+    const [result] = await pool.query(
+        "UPDATE veterinarios SET CRMV = ? WHERE id = ?",
+        [CRMV, id]
+    );
+    return result.affectedRows;
+}
+
+
+export async function deleteVeterinario(id) {
+    const [result] = await pool.query(
+        "UPDATE veterinarios SET isDeleted = TRUE WHERE id = ?",
+        [id]
+    );
+    return result.affectedRows;
+}

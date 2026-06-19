@@ -14,8 +14,8 @@ export async function createRaca(raca) {
 
     const [result] = await pool.query(
         `INSERT INTO racas 
-         (nome, origem, tamanho, expectativaVida, temperamento, pelagem, especiesId, isDeleted) 
-         VALUES (?, ?, ?, ?, ?, ?, ?, FALSE)`,
+         (nome, origem, tamanho, expectativaVida, temperamento, pelagem, especiesId) 
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
         [
             nome,
             origem,
@@ -37,7 +37,6 @@ export async function getRacas() {
             e.nome AS especieNome 
         FROM racas r
         JOIN especies e ON r.especiesId = e.id
-        WHERE r.isDeleted = FALSE AND e.isDeleted = FALSE
     `);
     return rows;
 }
@@ -51,7 +50,7 @@ export async function getRacaById(id) {
             e.nome AS especieNome 
         FROM racas r
         JOIN especies e ON r.especiesId = e.id
-        WHERE r.id = ? AND r.isDeleted = FALSE AND e.isDeleted = FALSE
+        WHERE r.id = ?
     `,
         [id]
     );
@@ -61,7 +60,7 @@ export async function getRacaById(id) {
 
 export async function getRacasByEspecie(especieId) {
     const [rows] = await pool.query(
-        "SELECT * FROM racas WHERE especiesId = ? AND isDeleted = FALSE",
+        "SELECT * FROM racas WHERE especiesId = ?",
         [especieId]
     );
     return rows;
@@ -101,7 +100,7 @@ export async function updateRaca(id, raca) {
 
 export async function deleteRaca(id) {
     const [result] = await pool.query(
-        "UPDATE racas SET isDeleted = TRUE WHERE id = ?",
+        "DELETE FROM racas WHERE id = ?",
         [id]
     );
     return result.affectedRows;

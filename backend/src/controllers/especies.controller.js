@@ -9,16 +9,16 @@ import {
 export async function createEspecieController(req, res) {
     const { nome } = req.body;
     try {
-        
+
         if (!nome) {
             return res.status(400).json({ error: "O campo 'nome' é obrigatório." });
         }
-        
+
 
         const id = await createEspecie(nome);
         res.status(201).json({ id }); // 201 Created é perfeito
     } catch (error) {
-        
+
         console.error("Erro em createEspecieController:", error);
         res.status(500).json({ error: "Erro ao criar espécie" });
     }
@@ -39,11 +39,11 @@ export async function getEspecieByIdController(req, res) {
     try {
         const especie = await getEspecieById(id);
 
-       
+
         if (!especie) {
             return res.status(404).json({ error: "Espécie não encontrada." });
         }
-        
+
 
         res.status(200).json(especie);
     } catch (error) {
@@ -56,19 +56,19 @@ export async function updateEspecieController(req, res) {
     const { id } = req.params;
     const { nome } = req.body;
     try {
-      
+
         if (!nome) {
             return res.status(400).json({ error: "O campo 'nome' é obrigatório." });
         }
-        
+
 
         const affectedRows = await updateEspecie(id, nome);
 
-       
+
         if (affectedRows === 0) {
             return res.status(404).json({ error: "Espécie não encontrada para atualizar." });
         }
-        
+
 
         res.status(200).json({ message: "Espécie atualizada com sucesso" });
     } catch (error) {
@@ -82,14 +82,18 @@ export async function deleteEspecieController(req, res) {
     try {
         const affectedRows = await deleteEspecie(id);
 
-        
         if (affectedRows === 0) {
             return res.status(404).json({ error: "Espécie não encontrada para deletar." });
         }
-      
-        res.status(204).send();
+        return res.json({
+            success: true,
+            message: "Espécie deletada com sucesso",
+            id
+        });
     } catch (error) {
-        console.error("Erro em deleteEspecieController:", error);
-        res.status(500).json({ error: "Erro ao deletar espécie" });
+        return res.status(500).json({
+            success: false,
+            message: "Erro ao deletar espécie"
+        });
     }
 }

@@ -11,14 +11,14 @@ export async function createRecurso(recurso){
 
 export async function getRecursos() {
     const [rows] = await pool.query(
-        "SELECT * FROM recursos WHERE isDeleted = FALSE"
+        "SELECT * FROM recursos"
     );
     return rows;
 }
 
 export async function getRecursoById(id) {
     const [rows] = await pool.query(
-        "SELECT * FROM recursos WHERE id = ? AND isDeleted = FALSE",
+        "SELECT * FROM recursos WHERE id = ?",
         [id]
     );
     return rows[0];
@@ -35,7 +35,7 @@ export async function updateRecurso(id,recurso){
 
 export async function deleteRecurso(id){
     const [result] = await pool.query(
-        "UPDATE recursos SET isDeleted = TRUE WHERE id = ?",
+        "DELETE FROM recursos WHERE id = ?",
         [id]
     );
     return result.affectedRows;
@@ -55,8 +55,7 @@ export async function getRelatorioRecursos() {
             COALESCE(SUM(di.quantidade * r.valor), 0) AS valorTotalDoacoes
         FROM recursos r
         LEFT JOIN doacoes_itens di ON r.id = di.recursoId
-        LEFT JOIN doacoes d ON di.doacaoId = d.id AND d.isDeleted = FALSE
-        WHERE r.isDeleted = FALSE
+        LEFT JOIN doacoes d ON di.doacaoId = d.id
         GROUP BY r.id, r.tipo, r.nome, r.quantidade, r.valor, r.descricao
         ORDER BY r.tipo, r.nome
     `);

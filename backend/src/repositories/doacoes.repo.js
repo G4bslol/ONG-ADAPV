@@ -19,7 +19,7 @@ export async function createDoacao(doacaoData) {
 
     
         const [doacaoResult] = await connection.query(
-            "INSERT INTO doacoes (dataDoacao, tipo, valor, descricao, isDeleted) VALUES (?, ?, ?, ?, FALSE)",
+            "INSERT INTO doacoes (dataDoacao, tipo, valor, descricao) VALUES (?, ?, ?, ?)",
             [dataDoacao, tipo, valor, descricao]
         );
         const newDoacaoId = doacaoResult.insertId;
@@ -82,7 +82,6 @@ export async function getDoacoes() {
         FROM doacoes d
         LEFT JOIN pessoas_doacoes pd ON d.id = pd.doacaoId
         LEFT JOIN pessoas p ON pd.pessoaId = p.id
-        WHERE d.isDeleted = FALSE
         ORDER BY d.dataDoacao DESC
     `);
     
@@ -123,7 +122,7 @@ export async function getDoacaoById(id) {
         FROM doacoes d
         LEFT JOIN pessoas_doacoes pd ON d.id = pd.doacaoId
         LEFT JOIN pessoas p ON pd.pessoaId = p.id
-        WHERE d.id = ? AND d.isDeleted = FALSE
+        WHERE d.id = ?
     `, [id]);
 
     const doacao = doacaoRows[0];
@@ -219,7 +218,7 @@ export async function updateDoacao(id, doacaoData) {
 
 export async function deleteDoacao(id) {
     const [result] = await pool.query(
-        "UPDATE doacoes SET isDeleted = TRUE WHERE id = ?",
+        "DELETE FROM doacoes WHERE id = ?",
         [id]
     );
     return result.affectedRows;
@@ -234,7 +233,7 @@ export async function getDoacoesByPessoa(pessoaId) {
         FROM doacoes d
         JOIN pessoas_doacoes pd ON d.id = pd.doacaoId
         LEFT JOIN pessoas p ON pd.pessoaId = p.id
-        WHERE pd.pessoaId = ? AND d.isDeleted = FALSE
+        WHERE pd.pessoaId = ?
         ORDER BY d.dataDoacao DESC
     `, [pessoaId]);
     
@@ -268,7 +267,7 @@ export async function getDoacoesByRecurso(recursoId) {
         SELECT d.*, di.quantidade
         FROM doacoes d
         JOIN doacoes_itens di ON d.id = di.doacaoId
-        WHERE di.recursoId = ? AND d.isDeleted = FALSE
+        WHERE di.recursoId = ?
         ORDER BY d.dataDoacao DESC
     `, [recursoId]);
     return rows;
@@ -291,7 +290,6 @@ export async function getRelatorioDoacoes() {
         FROM doacoes d
         INNER JOIN pessoas_doacoes pd ON d.id = pd.doacaoId
         INNER JOIN pessoas p ON pd.pessoaId = p.id
-        WHERE d.isDeleted = FALSE AND p.isDeleted = FALSE
         ORDER BY p.nome ASC, d.dataDoacao DESC
     `);
 

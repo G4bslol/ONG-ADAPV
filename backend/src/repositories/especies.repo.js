@@ -12,7 +12,7 @@ export async function createEspecie(nome) {
 
 export async function getEspecies() {
     const [rows] = await pool.query(
-        "SELECT * FROM especies WHERE isDeleted = FALSE"
+        "SELECT * FROM especies"
     );
     return rows;
 }
@@ -20,7 +20,7 @@ export async function getEspecies() {
 
 export async function getEspecieById(id) {
     const [rows] = await pool.query(
-        "SELECT * FROM especies WHERE id = ? AND isDeleted = FALSE",
+        "SELECT * FROM especies WHERE id = ?",
         [id]
     );
     return rows[0];
@@ -39,7 +39,7 @@ export async function updateEspecie(id, nome) {
 
 export async function deleteEspecie(id) {
     const [result] = await pool.query(
-        "UPDATE especies SET isDeleted = TRUE WHERE id = ?",
+        "DELETE FROM especies WHERE id = ?",
         [id]
     );
     return result.affectedRows;

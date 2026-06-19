@@ -10,6 +10,8 @@ import {
 
 const router = Router();
 router.post("/", createEspecieController);
+router.put("/:id", updateEspecieController);
+router.delete("/:id", deleteEspecieController);
 router.get("/", getEspeciesController);
 router.get("/:id", getEspecieByIdController);
 

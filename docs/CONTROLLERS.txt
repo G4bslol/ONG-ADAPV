@@ -1,0 +1,1346 @@
+import {
+    createAdocao,
+    getAdocoes,
+    getAdocaoById,
+    getAdocaoByAnimalId,
+    getAdocoesByPessoaId,
+    updateAdocao,
+    deleteAdocao,
+    getRelatorioAdocoes,
+} from "../repositories/adocoes.repo.js";
+
+export async function createAdocaoController(req, res) {
+    try {
+        const { animalId, pessoaId, dataAdocao } = req.body;
+
+        // --- VALIDAÇÃO DE ENTRADA (ERRO 400) ---
+        if (!animalId || !pessoaId || !dataAdocao) {
+            return res.status(400).json({
+                error: "Dados incompletos. 'animalId', 'pessoaId' e 'dataAdocao' são obrigatórios.",
+            });
+        }
+        // --- FIM VALIDAÇÃO 400 ---
+
+        // Chama a transação no repositório
+        const novoId = await createAdocao(req.body);
+        res.status(201).json({ id: novoId });
+
+    } catch (error) {
+        console.error("Erro em createAdocaoController:", error);
+
+        // --- VALIDAÇÃO DE CONFLITO (ERRO 409) ---
+        // 'ER_DUP_ENTRY' acontece por causa da sua regra UNIQUE no 'animalId'
+        if (error.code === "ER_DUP_ENTRY") {
+            return res
+                .status(409) // 409 Conflict
+                .json({ error: "Este animal já foi adotado." });
+        }
+        
+        // Erro se o 'animalId' ou 'pessoaId' não existir
+        if (error.code === "ER_NO_REFERENCED_ROW_2") {
+            return res.status(404).json({
+                error: "O 'animalId' ou 'pessoaId' fornecido não existe.",
+            });
+        }
+
+        res.status(500).json({ error: "Erro ao registrar adoção." });
+    }
+}
+
+export async function getAdocoesController(req, res) {
+    try {
+        const adocoes = await getAdocoes();
+        res.status(200).json(adocoes);
+    } catch (error) {
+        console.error("Erro em getAdocoesController:", error);
+        res.status(500).json({ error: "Erro ao buscar adoções." });
+    }
+}
+
+export async function getAdocaoByIdController(req, res) {
+    try {
+        const { id } = req.params;
+        const adocao = await getAdocaoById(id);
+
+        if (!adocao) {
+            return res.status(404).json({ error: "Registro de adoção não encontrado." });
+        }
+        res.status(200).json(adocao);
+
+    } catch (error) {
+        console.error("Erro em getAdocaoByIdController:", error);
+        res.status(500).json({ error: "Erro ao buscar adoção." });
+    }
+}
+
+export async function updateAdocaoController(req, res) {
+    try {
+        const { id } = req.params;
+        
+        // Apenas 'termoAssinado' e 'observacoes' podem ser atualizados
+        const affectedRows = await updateAdocao(id, req.body);
+
+        if (affectedRows === 0) {
+            return res
+                .status(404)
+                .json({ error: "Registro de adoção não encontrado para atualizar." });
+        }
+        res.status(200).json({ message: "Registro de adoção atualizado." });
+
+    } catch (error) {
+        console.error("Erro em updateAdocaoController:", error);
+        res.status(500).json({ error: "Erro ao atualizar adoção." });
+    }
+}
+
+export async function deleteAdocaoController(req, res) {
+    try {
+        const { id } = req.params;
+        const affectedRows = await deleteAdocao(id);
+
+        if (affectedRows === 0) {
+            return res
+                .status(404)
+                .json({ error: "Registro de adoção não encontrado para deletar." });
+        }
+        res.status(204).send();
+
+    } catch (error) {
+        console.error("Erro em deleteAdocaoController:", error);
+        // Erro se o ON DELETE RESTRICT bloquear a exclusão
+        if (error.code === 'ER_ROW_IS_REFERENCED_2') {
+             return res.status(409).json({ error: "Não é possível deletar este registro, pois ele está referenciado por outras tabelas." });
+        }
+        res.status(500).json({ error: "Erro ao deletar adoção." });
+    }
+}
+
+// --- Controladores Bônus ---
+
+export async function getAdocaoByAnimalIdController(req, res) {
+    try {
+        const { animalId } = req.params;
+        const adocao = await getAdocaoByAnimalId(animalId);
+        
+        if (!adocao) {
+            return res.status(404).json({ error: "Nenhum registro de adoção encontrado para este animal." });
+        }
+        res.status(200).json(adocao);
+
+    } catch (error) {
+        console.error("Erro em getAdocaoByAnimalIdController:", error);
+        res.status(500).json({ error: "Erro ao buscar adoção." });
+    }
+}
+
+export async function getAdocoesByPessoaIdController(req, res) {
+    try {
+        const { pessoaId } = req.params;
+        const adocoes = await getAdocoesByPessoaId(pessoaId);
+        
+        // Array vazio é uma resposta válida (pessoa não adotou ninguém)
+        res.status(200).json(adocoes);
+
+    } catch (error) {
+        console.error("Erro em getAdocoesByPessoaIdController:", error);
+        res.status(500).json({ error: "Erro ao buscar adoções da pessoa." });
+    }
+}
+
+export async function getRelatorioAdocoesController(req, res) {
+    try {
+        const relatorio = await getRelatorioAdocoes();
+        res.status(200).json(relatorio);
+    } catch (error) {
+        console.error("Erro em getRelatorioAdocoesController:", error);
+        res.status(500).json({ error: "Erro ao gerar relatório de adoções." });
+    }
+}
+
+
+
+import {
+    createAnimal,
+    getAnimais,
+    getAnimalById,
+    updateAnimal,
+    deleteAnimal,
+} from "../repositories/animais.repo.js";
+
+export async function createAnimalController(req, res) {
+    try {
+        const { nome, racasId } = req.body;
+
+        
+        if (!nome || !racasId) {
+            return res.status(400).json({
+                error: "Dados incompletos. 'nome' e 'racasId' são obrigatórios.",
+            });
+        }
+       
+        const novoId = await createAnimal(req.body);
+        res.status(201).json({ id: novoId });
+
+    } catch (error) {
+        console.error("Erro em createAnimalController:", error);
+        
+        if (error.code === "ER_NO_REFERENCED_ROW_2") {
+            return res
+                .status(404)
+                .json({ error: "A 'racasId' (raça) fornecida não existe." });
+        }
+        if (error.code === "ER_DATA_TOO_LONG") {
+            return res
+                .status(400)
+                .json({ error: "A imagem é muito grande. Por favor, use uma imagem menor ou altere o tipo da coluna fotoUrl para TEXT no banco de dados." });
+        }
+        res.status(500).json({ error: "Erro ao criar animal." });
+    }
+}
+
+export async function getAnimaisController(req, res) {
+    try {
+        const animais = await getAnimais();
+        res.status(200).json(animais);
+    } catch (error) {
+        console.error("Erro em getAnimaisController:", error);
+        res.status(500).json({ error: "Erro ao buscar animais." });
+    }
+}
+
+export async function getAnimalByIdController(req, res) {
+    try {
+        const { id } = req.params;
+        const animal = await getAnimalById(id);
+
+        if (!animal) {
+            return res.status(404).json({ error: "Animal não encontrado." });
+        }
+        res.status(200).json(animal);
+
+    } catch (error) {
+        console.error("Erro em getAnimalByIdController:", error);
+        res.status(500).json({ error: "Erro ao buscar animal." });
+    }
+}
+
+export async function updateAnimalController(req, res) {
+    try {
+        const { id } = req.params;
+        const { nome, racasId } = req.body;
+
+        
+        if (!nome || !racasId) {
+            return res.status(400).json({
+                error: "Dados incompletos. 'nome' e 'racasId' são obrigatórios.",
+            });
+        }
+       
+
+        const affectedRows = await updateAnimal(id, req.body);
+
+        if (affectedRows === 0) {
+            return res
+                .status(404)
+                .json({ error: "Animal não encontrado para atualizar." });
+        }
+        res.status(200).json({ message: "Animal atualizado com sucesso." });
+
+    } catch (error) {
+        console.error("Erro em updateAnimalController:", error);
+        if (error.code === "ER_NO_REFERENCED_ROW_2") {
+            return res
+                .status(404)
+                .json({ error: "A 'racasId' (raça) fornecida não existe." });
+        }
+        res.status(500).json({ error: "Erro ao atualizar animal." });
+    }
+}
+
+export async function deleteAnimalController(req, res) {
+    try {
+        const { id } = req.params;
+        const affectedRows = await deleteAnimal(id);
+
+        if (affectedRows === 0) {
+            return res
+                .status(404)
+                .json({ error: "Animal não encontrado para deletar." });
+        }
+        res.status(204).send();
+
+    } catch (error) {
+        console.error("Erro em deleteAnimalController:", error);
+        res.status(500).json({ error: "Erro ao deletar animal." });
+    }
+}
+
+
+
+import {
+    createAtendimento,
+    getAtendimentosByAnimalId,
+    getAtendimentoById,
+    updateAtendimento,
+    deleteAtendimento,
+    getRelatorioAtendimentos,
+} from "../repositories/atendimentos.repo.js";
+
+export async function createAtendimentoController(req, res) {
+    try {
+        const { animalId, dataAtendimento, tipo, descricao } = req.body;
+
+        // --- VALIDAÇÃO DE ENTRADA (ERRO 400) ---
+        if (!animalId || !dataAtendimento || !tipo || !descricao) {
+            return res.status(400).json({
+                error: "Dados incompletos. 'animalId', 'dataAtendimento', 'tipo' e 'descricao' são obrigatórios.",
+            });
+        }
+        // --- FIM VALIDAÇÃO ---
+
+        const novoId = await createAtendimento(req.body);
+        res.status(201).json({ id: novoId });
+
+    } catch (error) {
+        console.error("Erro em createAtendimentoController:", error);
+        
+        // Erro se o 'animalId' ou 'veterinarioId' não existir
+        if (error.code === "ER_NO_REFERENCED_ROW_2") {
+            return res.status(404).json({
+                error: "O 'animalId' ou 'veterinarioId' fornecido não existe.",
+            });
+        }
+        
+        res.status(500).json({ error: "Erro ao criar atendimento." });
+    }
+}
+
+export async function getAtendimentosByAnimalIdController(req, res) {
+    try {
+        const { animalId } = req.params;
+        const atendimentos = await getAtendimentosByAnimalId(animalId);
+        
+        // Não precisa de 404, um array vazio [] é uma resposta válida.
+        res.status(200).json(atendimentos);
+
+    } catch (error) {
+        console.error("Erro em getAtendimentosByAnimalIdController:", error);
+        res.status(500).json({ error: "Erro ao buscar atendimentos do animal." });
+    }
+}
+
+export async function getAtendimentoByIdController(req, res) {
+    try {
+        const { id } = req.params;
+        const atendimento = await getAtendimentoById(id);
+
+        // --- VALIDAÇÃO 404 ---
+        if (!atendimento) {
+            return res
+                .status(404)
+                .json({ error: "Atendimento não encontrado." });
+        }
+        // --- FIM VALIDAÇÃO 404 ---
+
+        res.status(200).json(atendimento);
+    } catch (error) {
+        console.error("Erro em getAtendimentoByIdController:", error);
+        res.status(500).json({ error: "Erro ao buscar atendimento." });
+    }
+}
+
+export async function updateAtendimentoController(req, res) {
+    try {
+        const { id } = req.params;
+        const { dataAtendimento, tipo, descricao } = req.body;
+
+        // --- VALIDAÇÃO DE ENTRADA (ERRO 400) ---
+        if (!dataAtendimento || !tipo || !descricao) {
+            return res.status(400).json({
+                error: "Dados incompletos. 'dataAtendimento', 'tipo' e 'descricao' são obrigatórios.",
+            });
+        }
+        // --- FIM VALIDAÇÃO 400 ---
+
+        const affectedRows = await updateAtendimento(id, req.body);
+
+        // --- VALIDAÇÃO 404 ---
+        if (affectedRows === 0) {
+            return res
+                .status(404)
+                .json({ error: "Atendimento não encontrado para atualizar." });
+        }
+        // --- FIM VALIDAÇÃO 404 ---
+
+        res.status(200).json({ message: "Atendimento atualizado com sucesso." });
+    } catch (error) {
+        console.error("Erro em updateAtendimentoController:", error);
+        
+        if (error.code === "ER_NO_REFERENCED_ROW_2") {
+            return res.status(404).json({
+                error: "O 'veterinarioId' fornecido não existe.",
+            });
+        }
+        
+        res.status(500).json({ error: "Erro ao atualizar atendimento." });
+    }
+}
+
+export async function deleteAtendimentoController(req, res) {
+    try {
+        const { id } = req.params;
+        const affectedRows = await deleteAtendimento(id);
+
+        // --- VALIDAÇÃO 404 ---
+        if (affectedRows === 0) {
+            return res
+                .status(404)
+                .json({ error: "Atendimento não encontrado para deletar." });
+        }
+        // --- FIM VALIDAÇÃO 404 ---
+
+        res.status(204).send();
+    } catch (error) {
+        console.error("Erro em deleteAtendimentoController:", error);
+        res.status(500).json({ error: "Erro ao deletar atendimento." });
+    }
+}
+
+export async function getRelatorioAtendimentosController(req, res) {
+    try {
+        const relatorio = await getRelatorioAtendimentos();
+        res.status(200).json(relatorio);
+    } catch (error) {
+        console.error("Erro em getRelatorioAtendimentosController:", error);
+        res.status(500).json({ error: "Erro ao gerar relatório de atendimentos." });
+    }
+}
+
+
+
+import { findPessoaByCpf, getPessoaById } from "../repositories/pessoas.repo.js";
+import bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken';
+
+const JWT_SECRET = 'SEU_SEGREDO_JWT_MUITO_SEGURO';
+
+export async function loginController(req, res) {
+    try {
+        const { cpf, senha } = req.body;
+
+        // 1. Valida a entrada
+        if (!cpf || !senha) {
+            return res.status(400).json({ error: "CPF e Senha são obrigatórios." });
+        }
+
+        // 2. Procura o usuário no banco pelo CPF
+        const pessoa = await findPessoaByCpf(cpf);
+        if (!pessoa) {
+            // (Não diga se foi o CPF ou a senha que errou, por segurança)
+            return res.status(404).json({ error: "Credenciais inválidas." });
+        }
+
+        // 3. Compara a senha enviada com a senha HASH do banco
+        const senhaCorreta = await bcrypt.compare(senha, pessoa.senha);
+        if (!senhaCorreta) {
+            return res.status(404).json({ error: "Credenciais inválidas." });
+        }
+
+        // 4. Se tudo deu certo, crie o "Crachá" (Token JWT)
+        const token = jwt.sign(
+            { 
+                id: pessoa.id, 
+                tipo: pessoa.tipo // Coloca o ID e o TIPO (Admin/User) dentro do crachá
+            },
+            JWT_SECRET, 
+            { expiresIn: '8h' } // Duração do login
+        );
+
+        // 5. Envia o token para o usuário
+        res.status(200).json({ token: token });
+
+    } catch (error) {
+        console.error("Erro em loginController:", error);
+        res.status(500).json({ error: "Erro interno no login." });
+    }
+}
+
+// Middleware para verificar token JWT
+export function verifyToken(req, res, next) {
+    try {
+        const token = req.headers.authorization?.replace('Bearer ', '');
+        
+        if (!token) {
+            return res.status(401).json({ error: "Token não fornecido." });
+        }
+
+        const decoded = jwt.verify(token, JWT_SECRET);
+        req.userId = decoded.id;
+        req.userTipo = decoded.tipo;
+        next();
+    } catch (error) {
+        return res.status(401).json({ error: "Token inválido ou expirado." });
+    }
+}
+
+// Controller para retornar dados do usuário autenticado
+export async function meController(req, res) {
+    try {
+        const pessoa = await getPessoaById(req.userId);
+        
+        if (!pessoa) {
+            return res.status(404).json({ error: "Usuário não encontrado." });
+        }
+
+        // Remove a senha da resposta
+        const { senha, ...pessoaSemSenha } = pessoa;
+        res.status(200).json(pessoaSemSenha);
+    } catch (error) {
+        console.error("Erro em meController:", error);
+        res.status(500).json({ error: "Erro interno ao buscar dados do usuário." });
+    }
+}
+
+
+
+import {
+    createDoacao,
+    getDoacoes,
+    getDoacaoById,
+    updateDoacao,
+    deleteDoacao,
+    getDoacoesByPessoa,
+    getDoacoesByRecurso,
+    getRelatorioDoacoes,
+} from "../repositories/doacoes.repo.js";
+
+export async function createDoacaoController(req, res) {
+    try {
+        const doacaoData = req.body;
+        const { pessoaId, dataDoacao, tipo, valor, itens } = doacaoData;
+
+       
+        if (!pessoaId || !dataDoacao || !tipo) {
+            return res.status(400).json({
+                error: "Dados incompletos. 'pessoaId', 'dataDoacao' e 'tipo' são obrigatórios.",
+            });
+        }
+
+       
+        if (tipo === "Monetária" || tipo === "Monetaria") {
+            if (!valor || valor <= 0) {
+                return res.status(400).json({
+                    error: "Para doação 'Monetária', o 'valor' é obrigatório e deve ser maior que zero.",
+                });
+            }
+        } else if (tipo === "Itens") {
+            if (!itens || !Array.isArray(itens) || itens.length === 0) {
+                return res.status(400).json({
+                    error: "Para doação 'Itens', o array 'itens' é obrigatório e não pode estar vazio.",
+                });
+            }
+            
+            for (const item of itens) {
+                if (!item.nome || !item.valor || item.valor <= 0 || !item.quantidade || item.quantidade <= 0) {
+                    return res.status(400).json({
+                        error: "Cada item na doação deve ter 'nome', 'valor' (maior que zero) e 'quantidade' (maior que zero).",
+                    });
+                }
+            }
+        } else {
+            return res
+                .status(400)
+                .json({ error: "Tipo de doação inválido." });
+        }
+
+        const novoId = await createDoacao(doacaoData);
+        res.status(201).json({ id: novoId });
+
+    } catch (error) {
+        console.error("Erro em createDoacaoController:", error);
+        res.status(500).json({ error: "Erro ao criar doação." });
+    }
+}
+
+export async function getDoacoesController(req, res) {
+    try {
+        const doacoes = await getDoacoes();
+        res.status(200).json(doacoes);
+    } catch (error) {
+        console.error("Erro em getDoacoesController:", error);
+        res.status(500).json({ error: "Erro ao buscar doações." });
+    }
+}
+
+export async function getDoacaoByIdController(req, res) {
+    try {
+        const { id } = req.params;
+        const doacao = await getDoacaoById(id);
+
+        if (!doacao) {
+            return res.status(404).json({ error: "Doação não encontrada." });
+        }
+
+        res.status(200).json(doacao);
+    } catch (error) {
+        console.error("Erro em getDoacaoByIdController:", error);
+        res.status(500).json({ error: "Erro ao buscar doação." });
+    }
+}
+
+export async function updateDoacaoController(req, res) {
+    try {
+        const { id } = req.params;
+        const doacaoData = req.body;
+        const { dataDoacao, tipo, valor, itens } = doacaoData;
+
+        if (!dataDoacao || !tipo) {
+            return res.status(400).json({
+                error: "Dados incompletos. 'dataDoacao' e 'tipo' são obrigatórios.",
+            });
+        }
+
+        if (tipo === "Monetária" || tipo === "Monetaria") {
+            if (!valor || valor <= 0) {
+                return res.status(400).json({
+                    error: "Para doação 'Monetária', o 'valor' é obrigatório e deve ser maior que zero.",
+                });
+            }
+        } else if (tipo === "Itens") {
+            if (!itens || !Array.isArray(itens) || itens.length === 0) {
+                return res.status(400).json({
+                    error: "Para doação 'Itens', o array 'itens' é obrigatório e não pode estar vazio.",
+                });
+            }
+            
+            for (const item of itens) {
+                if (!item.nome || !item.valor || item.valor <= 0 || !item.quantidade || item.quantidade <= 0) {
+                    return res.status(400).json({
+                        error: "Cada item na doação deve ter 'nome', 'valor' (maior que zero) e 'quantidade' (maior que zero).",
+                    });
+                }
+            }
+        }
+
+        await updateDoacao(id, doacaoData);
+        res.status(200).json({ message: "Doação atualizada com sucesso." });
+
+    } catch (error) {
+        console.error("Erro em updateDoacaoController:", error);
+        res.status(500).json({ error: "Erro ao atualizar doação." });
+    }
+}
+
+export async function deleteDoacaoController(req, res) {
+    try {
+        const { id } = req.params;
+        const affectedRows = await deleteDoacao(id);
+
+        if (affectedRows === 0) {
+            return res
+                .status(404)
+                .json({ error: "Doação não encontrada para deletar." });
+        }
+
+        res.status(204).send();
+    } catch (error) {
+        console.error("Erro em deleteDoacaoController:", error);
+        res.status(500).json({ error: "Erro ao deletar doação." });
+    }
+}
+
+// --- Controladores Bônus ---
+
+export async function getDoacoesByPessoaController(req, res) {
+    try {
+        const { pessoaId } = req.params;
+        const doacoes = await getDoacoesByPessoa(pessoaId);
+        
+        // Não precisa de 404, um array vazio é uma resposta válida
+        res.status(200).json(doacoes);
+
+    } catch (error) {
+        console.error("Erro em getDoacoesByPessoaController:", error);
+        res.status(500).json({ error: "Erro ao buscar doações da pessoa." });
+    }
+}
+
+export async function getDoacoesByRecursoController(req, res) {
+    try {
+        const { recursoId } = req.params;
+        const doacoes = await getDoacoesByRecurso(recursoId);
+        
+        // Não precisa de 404, um array vazio é uma resposta válida
+        res.status(200).json(doacoes);
+
+    } catch (error) {
+        console.error("Erro em getDoacoesByRecursoController:", error);
+        res.status(500).json({ error: "Erro ao buscar doações por recurso." });
+    }
+}
+
+export async function getRelatorioDoacoesController(req, res) {
+    try {
+        const relatorio = await getRelatorioDoacoes();
+        res.status(200).json(relatorio);
+    } catch (error) {
+        console.error("Erro em getRelatorioDoacoesController:", error);
+        res.status(500).json({ error: "Erro ao gerar relatório de doações." });
+    }
+}
+
+
+
+import {
+    createEspecie,
+    getEspecies,
+    getEspecieById,
+    updateEspecie,
+    deleteEspecie,
+} from "../repositories/especies.repo.js";
+
+export async function createEspecieController(req, res) {
+    const { nome } = req.body;
+    try {
+        
+        if (!nome) {
+            return res.status(400).json({ error: "O campo 'nome' é obrigatório." });
+        }
+        
+
+        const id = await createEspecie(nome);
+        res.status(201).json({ id }); // 201 Created é perfeito
+    } catch (error) {
+        
+        console.error("Erro em createEspecieController:", error);
+        res.status(500).json({ error: "Erro ao criar espécie" });
+    }
+}
+
+export async function getEspeciesController(req, res) {
+    try {
+        const especies = await getEspecies();
+        res.status(200).json(especies);
+    } catch (error) {
+        console.error("Erro em getEspeciesController:", error);
+        res.status(500).json({ error: "Erro ao buscar espécies" });
+    }
+}
+
+export async function getEspecieByIdController(req, res) {
+    const { id } = req.params;
+    try {
+        const especie = await getEspecieById(id);
+
+       
+        if (!especie) {
+            return res.status(404).json({ error: "Espécie não encontrada." });
+        }
+        
+
+        res.status(200).json(especie);
+    } catch (error) {
+        console.error("Erro em getEspecieByIdController:", error);
+        res.status(500).json({ error: "Erro ao buscar espécie" });
+    }
+}
+
+export async function updateEspecieController(req, res) {
+    const { id } = req.params;
+    const { nome } = req.body;
+    try {
+      
+        if (!nome) {
+            return res.status(400).json({ error: "O campo 'nome' é obrigatório." });
+        }
+        
+
+        const affectedRows = await updateEspecie(id, nome);
+
+       
+        if (affectedRows === 0) {
+            return res.status(404).json({ error: "Espécie não encontrada para atualizar." });
+        }
+        
+
+        res.status(200).json({ message: "Espécie atualizada com sucesso" });
+    } catch (error) {
+        console.error("Erro em updateEspecieController:", error);
+        res.status(500).json({ error: "Erro ao atualizar espécie" });
+    }
+}
+
+export async function deleteEspecieController(req, res) {
+    const { id } = req.params;
+    try {
+        const affectedRows = await deleteEspecie(id);
+
+        
+        if (affectedRows === 0) {
+            return res.status(404).json({ error: "Espécie não encontrada para deletar." });
+        }
+      
+        res.status(204).send();
+    } catch (error) {
+        console.error("Erro em deleteEspecieController:", error);
+        res.status(500).json({ error: "Erro ao deletar espécie" });
+    }
+}
+
+
+
+import {
+    createPessoa,
+    getPessoas,
+    getPessoaById,
+    updatePessoa,
+    deletePessoa,
+    findPessoaByCpf,
+} from "../repositories/pessoas.repo.js";
+import bcrypt from 'bcrypt';
+
+export async function createPessoaController(req, res) {
+    try {
+        
+        const { senha, cpf, ...dadosPessoa } = req.body;
+
+        
+        if (!senha) {
+            return res.status(400).json({ error: "A 'senha' é obrigatória." });
+        }
+
+        if (!cpf) {
+            return res.status(400).json({ error: "O 'cpf' é obrigatório." });
+        }
+
+        if (!dadosPessoa.dataNasc) {
+            return res.status(400).json({ error: "A 'dataNasc' é obrigatória." });
+        }
+
+        // Verificar se o CPF já existe
+        const pessoaExistente = await findPessoaByCpf(cpf);
+        if (pessoaExistente) {
+            return res.status(409).json({ error: "CPF já cadastrado." });
+        }
+        
+        const salt = await bcrypt.genSalt(10);
+        const senhaHash = await bcrypt.hash(senha, salt);
+
+        // Se o tipo não foi enviado, define como 'User' (cadastro pelo login)
+        // Se foi enviado, usa o valor (cadastro pela página de Pessoas)
+        const tipo = dadosPessoa.tipo || 'User';
+        
+        const novoId = await createPessoa({ 
+            ...dadosPessoa,
+            cpf,
+            senha: senhaHash, 
+            tipo: tipo 
+        });
+
+        res.status(201).json({ id: novoId });
+
+    } catch (error) {
+        console.error("Erro em createPessoaController:", error);
+        
+        // Tratar erro de CPF duplicado (caso a validação anterior falhe)
+        if (error.code === 'ER_DUP_ENTRY') {
+            return res.status(409).json({ error: "CPF já cadastrado." });
+        }
+        
+        // Tratar erro de campo NULL
+        if (error.code === 'ER_BAD_NULL_ERROR') {
+            return res.status(400).json({ error: "Alguns campos obrigatórios não foram preenchidos." });
+        }
+        
+        res.status(500).json({ error: "Erro ao criar pessoa" });
+    }
+}
+
+export async function getPessoasController(req, res) {
+    try {
+        const pessoas = await getPessoas();
+        res.status(200).json(pessoas);
+    } catch (error) {
+        console.error("Erro em getPessoasController:", error);
+        res.status(500).json({ error: "Erro ao buscar pessoas" });
+    }
+}
+
+export async function getPessoaByIdController(req, res) {
+    try {
+        const { id } = req.params;
+        const pessoa = await getPessoaById(id);
+
+        
+        if (!pessoa) {
+            return res.status(404).json({ error: "Pessoa não encontrada" });
+        }
+        
+        res.status(200).json(pessoa);
+    } catch (error) {
+        console.error("Erro em getPessoaByIdController:", error);
+        res.status(500).json({ error: "Erro ao buscar pessoa" });
+    }
+}
+
+export async function updatePessoaController(req, res) {
+    try {
+        const { id } = req.params;
+        const { nome, cpf, dataNasc, telefone, email, cep, logradouro, numero, complemento, bairro, cidade, estado, tipo } = req.body;
+
+       
+        if (!nome || !cpf) {
+            return res.status(400).json({ error: "Dados incompletos. Nome e CPF são obrigatórios." });
+        }
+       
+        const affectedRows = await updatePessoa(id, { nome, cpf, dataNasc, telefone, email, cep, logradouro, numero, complemento, bairro, cidade, estado, tipo });
+
+      
+        if (affectedRows === 0) {
+            return res.status(404).json({ error: "Pessoa não encontrada para atualizar" });
+        }
+       
+        res.status(200).json({ id: id, ...req.body }); 
+
+    } catch (error) {
+        console.error("Erro em updatePessoaController:", error);
+        if (error.code === 'ER_DUP_ENTRY') {
+            return res.status(409).json({ error: "CPF ou Email já cadastrado." });
+        }
+        res.status(500).json({ error: "Erro ao atualizar pessoa" });
+    }
+}
+
+export async function deletePessoaController(req, res) {
+    try {
+        const { id } = req.params;
+        
+        
+        const affectedRows = await deletePessoa(id);
+
+        
+        if (affectedRows === 0) {
+            return res.status(404).json({ error: "Pessoa não encontrada para deletar" });
+        }
+       
+        res.status(204).send();
+
+    } catch (error) {
+        console.error("Erro em deletePessoaController:", error);
+        res.status(500).json({ error: "Erro ao deletar pessoa" });
+    }
+}
+
+
+
+import {
+    createRaca,
+    getRacas,
+    getRacaById,
+    getRacasByEspecie,
+    updateRaca,
+    deleteRaca,
+} from "../repositories/racas.repo.js";
+
+export async function createRacaController(req, res) {
+    try {
+        const { nome, especiesId } = req.body;
+
+        
+        if (!nome || !especiesId) {
+            return res.status(400).json({
+                error: "Dados incompletos. 'nome' e 'especiesId' são obrigatórios.",
+            });
+        }
+      
+
+        
+        const novoId = await createRaca(req.body);
+
+        res.status(201).json({ id: novoId });
+    } catch (error) {
+        console.error("Erro em createRacaController:", error);
+       
+        if (error.code === "ER_NO_REFERENCED_ROW_2") {
+            return res
+                .status(404)
+                .json({ error: "A 'especiesId' fornecida não existe." });
+        }
+        res.status(500).json({ error: "Erro ao criar raça." });
+    }
+}
+
+export async function getRacasController(req, res) {
+    try {
+        const racas = await getRacas();
+        res.status(200).json(racas);
+    } catch (error) {
+        console.error("Erro em getRacasController:", error);
+        res.status(500).json({ error: "Erro ao buscar raças." });
+    }
+}
+
+export async function getRacaByIdController(req, res) {
+    try {
+        const { id } = req.params;
+        const raca = await getRacaById(id);
+
+        if (!raca) {
+            return res.status(404).json({ error: "Raça não encontrada." });
+        }
+       
+
+        res.status(200).json(raca);
+    } catch (error) {
+        console.error("Erro em getRacaByIdController:", error);
+        res.status(500).json({ error: "Erro ao buscar raça." });
+    }
+}
+
+export async function updateRacaController(req, res) {
+    try {
+        const { id } = req.params;
+        const { nome, especiesId } = req.body;
+
+        
+        if (!nome || !especiesId) {
+            return res.status(400).json({
+                error: "Dados incompletos. 'nome' e 'especiesId' são obrigatórios.",
+            });
+        }
+        
+
+        const affectedRows = await updateRaca(id, req.body);
+
+        
+        if (affectedRows === 0) {
+            return res
+                .status(404)
+                .json({ error: "Raça não encontrada para atualizar." });
+        }
+        
+
+        res.status(200).json({ message: "Raça atualizada com sucesso." });
+    } catch (error) {
+        console.error("Erro em updateRacaController:", error);
+        if (error.code === "ER_NO_REFERENCED_ROW_2") {
+            return res
+                .status(404)
+                .json({ error: "A 'especiesId' fornecida não existe." });
+        }
+        res.status(500).json({ error: "Erro ao atualizar raça." });
+    }
+}
+
+export async function deleteRacaController(req, res) {
+    try {
+        const { id } = req.params;
+        const affectedRows = await deleteRaca(id);
+
+        
+        if (affectedRows === 0) {
+            return res
+                .status(404)
+                .json({ error: "Raça não encontrada para deletar." });
+        }
+        
+
+        res.status(204).send();
+    } catch (error) {
+        console.error("Erro em deleteRacaController:", error);
+        res.status(500).json({ error: "Erro ao deletar raça." });
+    }
+}
+
+
+
+export async function getRacasByEspecieController(req, res) {
+    try {
+        const { especieId } = req.params;
+        const racas = await getRacasByEspecie(especieId);
+        
+        
+        res.status(200).json(racas);
+
+    } catch (error) {
+        console.error("Erro em getRacasByEspecieController:", error);
+        res.status(500).json({ error: "Erro ao buscar raças por espécie." });
+    }
+}
+
+
+
+import {
+    createRecurso,
+    getRecursos,
+    getRecursoById,
+    updateRecurso,
+    deleteRecurso,
+    getRelatorioRecursos,
+} from "../repositories/recursos.repo.js";
+
+export async function createRecursoController(req, res) {
+    try {
+        const { tipo, nome, quantidade, valor, descricao } = req.body;
+
+       
+        if (!tipo || !nome) {
+            return res.status(400).json({
+                error: "Dados incompletos. 'tipo' e 'nome' são obrigatórios.",
+            });
+        }
+       
+        if (quantidade === undefined || quantidade === null) {
+            return res.status(400).json({
+                error: "Dados incompletos. 'quantidade' é obrigatória.",
+            });
+        }
+        
+
+        const novoId = await createRecurso({
+            tipo,
+            nome,
+            quantidade,
+            valor: valor || 0,
+            descricao,
+        });
+
+        res.status(201).json({ id: novoId });
+    } catch (error) {
+        console.error("Erro em createRecursoController:", error);
+        res.status(500).json({ error: "Erro ao criar recurso." });
+    }
+}
+
+export async function getRecursosController(req, res) {
+    try {
+        const recursos = await getRecursos();
+        res.status(200).json(recursos); 
+    } catch (error) {
+        console.error("Erro em getRecursosController:", error);
+        res.status(500).json({ error: "Erro ao buscar recursos." });
+    }
+}
+
+export async function getRecursoByIdController(req, res) {
+    try {
+        const { id } = req.params;
+        const recurso = await getRecursoById(id);
+
+        
+        if (!recurso) {
+            return res.status(404).json({ error: "Recurso não encontrado." });
+        }
+        
+
+        res.status(200).json(recurso); 
+    } catch (error) {
+        console.error("Erro em getRecursoByIdController:", error);
+        res.status(500).json({ error: "Erro ao buscar recurso." });
+    }
+}
+
+export async function updateRecursoController(req, res) {
+    try {
+        const { id } = req.params;
+        const { tipo, nome, quantidade, valor, descricao } = req.body; // 
+
+       
+        if (!tipo || !nome || (quantidade === undefined || quantidade === null)) {
+            return res.status(400).json({
+                error: "Dados incompletos. 'tipo', 'nome' e 'quantidade' são obrigatórios.",
+            });
+        }
+       
+
+        const affectedRows = await updateRecurso(id, {
+            tipo,
+            nome,
+            quantidade,
+            valor: valor || 0,
+            descricao,
+        });
+
+        
+        if (affectedRows === 0) {
+            return res
+                .status(404)
+                .json({ error: "Recurso não encontrado para atualizar." });
+        }
+        
+
+        res.status(200).json({ message: "Recurso atualizado com sucesso." });
+    } catch (error) {
+        console.error("Erro em updateRecursoController:", error);
+        res.status(500).json({ error: "Erro ao atualizar recurso." });
+    }
+}
+
+export async function deleteRecursoController(req, res) {
+    try {
+        const { id } = req.params;
+
+        
+        const affectedRows = await deleteRecurso(id);
+      
+    if (affectedRows === 0) {
+            return res
+                .status(404)
+                .json({ error: "Recurso não encontrado para deletar." });
+        }
+      
+
+        res.status(204).send(); 
+    } catch (error) {
+        console.error("Erro em deleteRecursoController:", error);
+        res.status(500).json({ error: "Erro ao deletar recurso." });
+    }
+}
+
+export async function getRelatorioRecursosController(req, res) {
+    try {
+        const relatorio = await getRelatorioRecursos();
+        res.status(200).json(relatorio);
+    } catch (error) {
+        console.error("Erro em getRelatorioRecursosController:", error);
+        res.status(500).json({ error: "Erro ao gerar relatório de recursos." });
+    }
+}
+
+
+
+import {
+    createVeterinario,
+    getVeterinarios,
+    getVeterinarioById,
+    getVeterinarioByPessoaId, 
+    updateVeterinario,
+    deleteVeterinario,
+} from "../repositories/veterinarios.repo.js";
+
+export async function createVeterinarioController(req, res) {
+    try {
+        const { pessoaId, CRMV } = req.body;
+
+       
+        if (!pessoaId || !CRMV) {
+            return res.status(400).json({
+                error: "Dados incompletos. 'pessoaId' e 'CRMV' são obrigatórios.",
+            });
+        }
+  
+        const jaExiste = await getVeterinarioByPessoaId(pessoaId);
+        if (jaExiste) {
+            return res.status(409).json({
+                error: "Esta pessoa já está cadastrada como veterinário.",
+            });
+        }
+      
+
+        const novoId = await createVeterinario({ pessoaId, CRMV });
+        res.status(201).json({ id: novoId });
+
+    } catch (error) {
+        console.error("Erro em createVeterinarioController:", error);
+        
+        
+        if (error.code === "ER_NO_REFERENCED_ROW_2") {
+            return res
+                .status(404)
+                .json({ error: "A 'pessoaId' fornecida não existe." });
+        }
+        if (error.code === "ER_DUP_ENTRY") {
+            return res
+                .status(409)
+                .json({ error: "Este CRMV já está cadastrado." });
+        }
+        
+        res.status(500).json({ error: "Erro ao criar veterinário." });
+    }
+}
+
+export async function getVeterinariosController(req, res) {
+    try {
+        const veterinarios = await getVeterinarios();
+        res.status(200).json(veterinarios);
+    } catch (error) {
+        console.error("Erro em getVeterinariosController:", error);
+        res.status(500).json({ error: "Erro ao buscar veterinários." });
+    }
+}
+
+export async function getVeterinarioByIdController(req, res) {
+    try {
+        const { id } = req.params;
+        const veterinario = await getVeterinarioById(id);
+
+        
+        if (!veterinario) {
+            return res
+                .status(404)
+                .json({ error: "Veterinário não encontrado." });
+        }
+       
+
+        res.status(200).json(veterinario);
+    } catch (error) {
+        console.error("Erro em getVeterinarioByIdController:", error);
+        res.status(500).json({ error: "Erro ao buscar veterinário." });
+    }
+}
+
+export async function updateVeterinarioController(req, res) {
+    try {
+        const { id } = req.params;
+        const { CRMV } = req.body; 
+
+      
+        if (!CRMV) {
+            return res
+                .status(400)
+                .json({ error: "O campo 'CRMV' é obrigatório." });
+        }
+
+        const affectedRows = await updateVeterinario(id, CRMV);
+
+        
+        if (affectedRows === 0) {
+            return res
+                .status(404)
+                .json({ error: "Veterinário não encontrado para atualizar." });
+        }
+        
+
+        res.status(200).json({ message: "Veterinário atualizado com sucesso." });
+    } catch (error)
+    {
+        console.error("Erro em updateVeterinarioController:", error);
+        
+         if (error.code === "ER_DUP_ENTRY") {
+            return res
+                .status(409)
+                .json({ error: "Este CRMV já está cadastrado." });
+        }
+        res.status(500).json({ error: "Erro ao atualizar veterinário." });
+    }
+}
+
+export async function deleteVeterinarioController(req, res) {
+    try {
+        const { id } = req.params;
+        const affectedRows = await deleteVeterinario(id);
+
+        
+        if (affectedRows === 0) {
+            return res
+                .status(404)
+                .json({ error: "Veterinário não encontrado para deletar." });
+        }
+        
+
+        res.status(204).send();
+    } catch (error) {
+        console.error("Erro em deleteVeterinarioController:", error);
+        res.status(500).json({ error: "Erro ao deletar veterinário." });
+    }
+}

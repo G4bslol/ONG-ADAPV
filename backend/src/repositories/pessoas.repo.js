@@ -3,7 +3,7 @@ import pool from "../config/db.js";
 
 export async function findPessoaByCpf(cpf) {
     const [rows] = await pool.query(
-        "SELECT * FROM pessoas WHERE cpf = ? AND isDeleted = FALSE",
+        "SELECT * FROM pessoas WHERE cpf = ?",
         [cpf]
     );
     return rows[0]; 
@@ -44,7 +44,7 @@ export async function createPessoa(pessoa) {
 export async function getPessoas() {
    
     const [rows] = await pool.query(
-        "SELECT * FROM pessoas WHERE isDeleted = FALSE"
+        "SELECT * FROM pessoas"
     );
     return rows;
 }
@@ -52,7 +52,7 @@ export async function getPessoas() {
 export async function getPessoaById(id) {
    
     const [rows] = await pool.query(
-        "SELECT * FROM pessoas WHERE id = ? AND isDeleted = FALSE", 
+        "SELECT * FROM pessoas WHERE id = ?", 
         [id]
     );
     return rows[0];
@@ -70,7 +70,7 @@ export async function updatePessoa(id, pessoa) {
 
 export async function deletePessoa(id) {
     const [result] = await pool.query(
-        "UPDATE pessoas SET isDeleted = TRUE WHERE id = ?", 
+        "DELETE FROM pessoas WHERE id = ?", 
         [id]
     );
     return result.affectedRows;

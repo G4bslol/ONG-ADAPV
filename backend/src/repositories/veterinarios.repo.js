@@ -5,7 +5,7 @@ export async function createVeterinario(veterinario) {
     const { pessoaId, CRMV } = veterinario;
 
     const [result] = await pool.query(
-        "INSERT INTO veterinarios (pessoaId, CRMV, isDeleted) VALUES (?, ?, FALSE)",
+        "INSERT INTO veterinarios (pessoaId, CRMV) VALUES (?, ?)",
         [pessoaId, CRMV]
     );
     return result.insertId;
@@ -23,7 +23,6 @@ export async function getVeterinarios() {
             p.telefone 
         FROM veterinarios v
         JOIN pessoas p ON v.pessoaId = p.id
-        WHERE v.isDeleted = FALSE AND p.isDeleted = FALSE
     `);
     return rows;
 }
@@ -41,7 +40,6 @@ export async function getVeterinarioById(id) {
             p.telefone 
         FROM veterinarios v
         JOIN pessoas p ON v.pessoaId = p.id
-        WHERE v.id = ? AND v.isDeleted = FALSE AND p.isDeleted = FALSE
     `,
         [id]
     );
@@ -56,7 +54,7 @@ export async function getVeterinarioByPessoaId(pessoaId) {
             v.id, v.CRMV, v.pessoaId, p.nome 
         FROM veterinarios v
         JOIN pessoas p ON v.pessoaId = p.id
-        WHERE v.pessoaId = ? AND v.isDeleted = FALSE
+        WHERE v.pessoaId = ?
     `,
         [pessoaId]
     );
@@ -75,7 +73,7 @@ export async function updateVeterinario(id, CRMV) {
 
 export async function deleteVeterinario(id) {
     const [result] = await pool.query(
-        "UPDATE veterinarios SET isDeleted = TRUE WHERE id = ?",
+        "DELETE FROM veterinarios WHERE id = ?",
         [id]
     );
     return result.affectedRows;

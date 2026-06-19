@@ -114,7 +114,6 @@ export async function getRelatorioAtendimentos() {
         LEFT JOIN especies e ON r.especiesId = e.id
         LEFT JOIN veterinarios v ON at.veterinarioId = v.id
         LEFT JOIN pessoas p ON v.pessoaId = p.id
-        WHERE an.isDeleted = FALSE
         ORDER BY at.dataAtendimento DESC
     `);
     return rows;

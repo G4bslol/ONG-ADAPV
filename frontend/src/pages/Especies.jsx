@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import apiService from '../services/api';
 import './CrudPage.css';
 
@@ -10,6 +10,18 @@ const Especies = () => {
   const [success, setSuccess] = useState('');
   const [formData, setFormData] = useState({ nome: '' });
   const [editingId, setEditingId] = useState(null);
+
+  useEffect(() => {
+    async function carregarEspecies() {
+      try {
+        handleListar()
+      } catch (err) {
+        console.log("Erro ao carregar pela primeira vez espécies: ", err)
+      }
+    }
+
+    carregarEspecies();
+  }, [])
 
   const handleChange = (e) => {
     setFormData({ nome: e.target.value });

@@ -6,8 +6,8 @@ export async function createAnimal(animal) {
     const { nome, cor, dataNasc, racasId, pessoaId, fotoUrl } = animal; 
 
     const [result] = await pool.query(
-        `INSERT INTO animais (nome, cor, dataNasc, racasId, pessoaId, fotoUrl, isDeleted) 
-         VALUES (?, ?, ?, ?, ?, ?, FALSE)`,
+        `INSERT INTO animais (nome, cor, dataNasc, racasId, pessoaId, fotoUrl) 
+         VALUES (?, ?, ?, ?, ?, ?)`,
         [nome, cor, dataNasc, racasId, pessoaId, fotoUrl] // fotoUrl pode ser null
     );
     return result.insertId;
@@ -28,7 +28,6 @@ export async function getAnimais() {
         FROM animais a
         JOIN racas r ON a.racasId = r.id
         JOIN especies e ON r.especiesId = e.id
-        WHERE a.isDeleted = FALSE AND r.isDeleted = FALSE
     `);
     return rows;
 }
@@ -46,7 +45,7 @@ export async function getAnimalById(id) {
         JOIN racas r ON a.racasId = r.id
         JOIN especies e ON r.especiesId = e.id
         LEFT JOIN pessoas p ON a.pessoaId = p.id 
-        WHERE a.id = ? AND a.isDeleted = FALSE
+        WHERE a.id = ? 
     `,
         [id]
     );
@@ -70,7 +69,7 @@ export async function updateAnimal(id, animal) {
 
 export async function deleteAnimal(id) {
     const [result] = await pool.query(
-        "UPDATE animais SET isDeleted = TRUE WHERE id = ?",
+        "DELETE FROM animais WHERE id = ?",
         [id]
     );
     return result.affectedRows;
