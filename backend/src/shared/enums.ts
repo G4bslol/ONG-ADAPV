@@ -1,0 +1,1 @@
+export const AnimalSpecies = ['DOG', 'CAT', 'OTHER'] as const;

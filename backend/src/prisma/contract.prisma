@@ -1,0 +1,364 @@
+
+// ---------- ENUMS ----------
+
+enum Species {
+  DOG
+  CAT
+  OTHER
+}
+
+enum AnimalSex {
+  MALE
+  FEMALE
+  UNKNOWN
+}
+
+enum AnimalStatus {
+  RESCUED
+  IN_TREATMENT
+  QUARANTINE
+  AVAILABLE_FOR_ADOPTION
+  ADOPTED
+  DECEASED
+}
+
+enum NeuterStatus {
+  NOT_NEUTERED
+  SCHEDULED
+  NEUTERED
+}
+
+enum AttachmentType {
+  PHOTO
+  VET_REPORT
+  OTHER
+}
+
+enum MedicalRecordType {
+  CONSULTATION
+  TREATMENT
+  MEDICATION
+  EXAM
+}
+
+enum SurgeryType {
+  CASTRATION
+  RECONSTRUCTIVE
+  EMERGENCY
+  OTHER
+}
+
+enum SurgeryStatus {
+  SCHEDULED
+  COMPLETED
+  CANCELED
+}
+
+enum AdoptionStatus {
+  PRE_EVALUATION
+  APPROVED
+  REJECTED
+  IN_PROGRESS
+  COMPLETED
+  CANCELED
+}
+
+enum AdoptionDocumentType {
+  ADOPTION_TERM
+  SIGNATURE_PROOF
+  DELIVERY_RECEIPT
+  OTHER
+}
+
+enum VolunteerStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum DonationType {
+  MONEY
+  FOOD
+  MEDICINE
+  HYGIENE
+  MATERIAL
+  OTHER
+}
+
+enum InventoryCategory {
+  FOOD
+  MEDICINE
+  HYGIENE
+  MATERIAL
+  OTHER
+}
+
+enum NotificationType {
+  NEW_RESCUE
+  VACCINE_REMINDER
+  VET_FOLLOWUP
+  MEDICATION_REMINDER
+  CRITICAL_ANIMAL
+  ADOPTION_UPDATE
+  DONATION_CAMPAIGN
+}
+
+enum UserRole {
+  ADMIN
+  STAFF
+  VET
+  VOLUNTEER
+}
+
+// ---------- ANIMAIS ----------
+
+model Animal {
+  id               Int          @id @default(autoincrement())
+  name             String
+  species          Species
+  breed            String?
+  approximateAge   String?
+  sex              AnimalSex    @default(UNKNOWN)
+  physicalTraits   String?
+  healthHistory    String?
+  rescueConditions String?
+  rescueDate       DateTime     @default(now())
+  status           AnimalStatus @default(RESCUED)
+  neuterStatus     NeuterStatus @default(NOT_NEUTERED)
+  arrivedAt        DateTime     @default(now())
+  leftAt           DateTime?
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @default(now())
+
+  attachments       Attachment[]
+  vaccinations      Vaccination[]
+  medicalRecords    MedicalRecord[]
+  surgeries         Surgery[]
+  adoptionProcesses AdoptionProcess[]
+  resourceUsages    ResourceUsage[]
+  notifications     Notification[]
+
+  @@index([status])
+  @@index([rescueDate])
+  @@index([neuterStatus])
+  @@map("animals")
+}
+
+model Attachment {
+  id          Int         @id @default(autoincrement())
+  animalId    Int
+  animal      Animal         @relation(fields: [animalId], references: [id], onDelete: Cascade)
+  type        AttachmentType
+  url         String
+  description String?
+  uploadedAt  DateTime       @default(now())
+
+  @@index([animalId])
+  @@map("attachments")
+}
+
+// ---------- SAÚDE ----------
+
+model Vaccination {
+  id              Int    @id @default(autoincrement())
+  animalId        Int
+  animal          Animal    @relation(fields: [animalId], references: [id], onDelete: Cascade)
+  vaccineName     String
+  applicationDate DateTime
+  nextDoseDate    DateTime?
+  veterinarian    String?
+  notes           String?
+  createdAt       DateTime  @default(now())
+
+  @@index([animalId])
+  @@index([nextDoseDate])
+  @@map("vaccinations")
+}
+
+model MedicalRecord {
+  id           Int            @id @default(autoincrement())
+  animalId     Int
+  animal       Animal            @relation(fields: [animalId], references: [id], onDelete: Cascade)
+  type         MedicalRecordType
+  description  String
+  date         DateTime
+  veterinarian String?
+  clinic       String?
+  notes        String?
+  createdAt    DateTime          @default(now())
+
+  @@index([animalId])
+  @@index([date])
+  @@map("medical_records")
+}
+
+model Surgery {
+  id            Int        @id @default(autoincrement())
+  animalId      Int
+  animal        Animal        @relation(fields: [animalId], references: [id], onDelete: Cascade)
+  type          SurgeryType
+  status        SurgeryStatus @default(SCHEDULED)
+  scheduledDate DateTime?
+  performedDate DateTime?
+  clinic        String?
+  veterinarian  String?
+  notes         String?
+  createdAt     DateTime      @default(now())
+
+  @@index([animalId])
+  @@index([type, status])
+  @@map("surgeries")
+}
+
+// ---------- ADOÇÃO ----------
+
+model Adopter {
+  id            Int   @id @default(autoincrement())
+  name          String
+  cpf           String   @unique
+  phone         String
+  email         String?
+  address       String?
+  occupation    String?
+  housingType   String?
+  hasOtherPets  Boolean  @default(false)
+  otherPetsInfo String?
+  createdAt     DateTime @default(now())
+
+  adoptionProcesses AdoptionProcess[]
+
+  @@map("adopters")
+}
+
+model AdoptionProcess {
+  id                 Int         @id @default(autoincrement())
+  animalId           Int
+  animal             Animal         @relation(fields: [animalId], references: [id])
+  adopterId          Int
+  adopter            Adopter        @relation(fields: [adopterId], references: [id])
+  status             AdoptionStatus @default(PRE_EVALUATION)
+  compatibilityNotes String?
+  requestDate        DateTime       @default(now())
+  approvalDate       DateTime?
+  deliveryDate       DateTime?
+  notes              String?
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @default(now())
+
+  documents     AdoptionDocument[]
+  notifications Notification[]
+
+  @@index([animalId])
+  @@index([adopterId])
+  @@index([status])
+  @@map("adoption_processes")
+}
+
+model AdoptionDocument {
+  id                Int               @id @default(autoincrement())
+  adoptionProcessId Int
+  adoptionProcess   AdoptionProcess      @relation(fields: [adoptionProcessId], references: [id], onDelete: Cascade)
+  type              AdoptionDocumentType
+  fileUrl           String
+  signedAt          DateTime?
+  notes             String?
+  createdAt         DateTime             @default(now())
+
+  @@index([adoptionProcessId])
+  @@map("adoption_documents")
+}
+
+// ---------- ADMINISTRAÇÃO INTERNA ----------
+
+model Volunteer {
+  id           Int          @id @default(autoincrement())
+  name         String
+  phone        String
+  email        String?         @unique
+  role         String?
+  availability String?
+  status       VolunteerStatus @default(ACTIVE)
+  joinedAt     DateTime        @default(now())
+
+  @@map("volunteers")
+}
+
+model Donation {
+  id           Int       @id @default(autoincrement())
+  donorName    String?
+  donorContact String?
+  type         DonationType
+  description  String?
+  quantity     Float?
+  unit         String?
+  value        Float?
+  date         DateTime     @default(now())
+  notes        String?
+
+  @@index([type])
+  @@index([date])
+  @@map("donations")
+}
+
+model InventoryItem {
+  id           Int            @id @default(autoincrement())
+  name         String
+  category     InventoryCategory
+  unit         String
+  quantity     Float             @default(0)
+  minThreshold Float?
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @default(now())
+
+  usages ResourceUsage[]
+
+  @@map("inventory_items")
+}
+
+model ResourceUsage {
+  id              Int        @id @default(autoincrement())
+  animalId        Int?
+  animal          Animal?       @relation(fields: [animalId], references: [id])
+  inventoryItemId Int
+  inventoryItem   InventoryItem @relation(fields: [inventoryItemId], references: [id])
+  quantityUsed    Float
+  date            DateTime      @default(now())
+  notes           String?
+
+  @@index([animalId])
+  @@index([inventoryItemId])
+  @@map("resource_usages")
+}
+
+// ---------- ALERTAS ----------
+
+model Notification {
+  id                Int           @id @default(autoincrement())
+  type              NotificationType
+  title             String
+  message           String
+  animalId          Int?
+  animal            Animal?          @relation(fields: [animalId], references: [id])
+  adoptionProcessId Int?
+  adoptionProcess   AdoptionProcess? @relation(fields: [adoptionProcessId], references: [id])
+  read              Boolean          @default(false)
+  scheduledFor      DateTime?
+  createdAt         DateTime         @default(now())
+
+  @@index([type])
+  @@index([read])
+  @@map("notifications")
+}
+
+// ---------- USUÁRIOS DO SISTEMA ----------
+
+model User {
+  id           Int   @id @default(autoincrement())
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         UserRole @default(STAFF)
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+
+  @@map("users")
+}

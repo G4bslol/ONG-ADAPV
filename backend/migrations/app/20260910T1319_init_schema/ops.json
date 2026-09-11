@@ -1,0 +1,2068 @@
+[
+  {
+    "id": "dropTable.post",
+    "label": "Drop table \"post\"",
+    "operationClass": "destructive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "post"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"post\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"post\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "drop table \"post\"",
+        "sql": "DROP TABLE \"public\".\"post\""
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"post\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"post\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "dropTable.user",
+    "label": "Drop table \"user\"",
+    "operationClass": "destructive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "user"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"user\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"user\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "drop table \"user\"",
+        "sql": "DROP TABLE \"public\".\"user\""
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"user\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"user\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.adopters",
+    "label": "Create table \"adopters\"",
+    "summary": "Creates table \"adopters\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "adopters"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"adopters\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"adopters\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"adopters\"",
+        "sql": "CREATE TABLE \"public\".\"adopters\" (\n  \"address\" text,\n  \"cpf\" text NOT NULL,\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"email\" text,\n  \"hasOtherPets\" bool DEFAULT false NOT NULL,\n  \"housingType\" text,\n  \"id\" SERIAL NOT NULL,\n  \"name\" text NOT NULL,\n  \"occupation\" text,\n  \"otherPetsInfo\" text,\n  \"phone\" text NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"adopters\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"adopters\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.adoption_documents",
+    "label": "Create table \"adoption_documents\"",
+    "summary": "Creates table \"adoption_documents\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "adoption_documents"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"adoption_documents\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"adoption_documents\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"adoption_documents\"",
+        "sql": "CREATE TABLE \"public\".\"adoption_documents\" (\n  \"adoptionProcessId\" int4 NOT NULL,\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"fileUrl\" text NOT NULL,\n  \"id\" SERIAL NOT NULL,\n  \"notes\" text,\n  \"signedAt\" timestamptz,\n  \"type\" text NOT NULL,\n  PRIMARY KEY (\"id\"),\n  CONSTRAINT \"adoption_documents_type_check_0ca6472c\" CHECK (\"type\" IN ('ADOPTION_TERM', 'SIGNATURE_PROOF', 'DELIVERY_RECEIPT', 'OTHER'))\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"adoption_documents\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"adoption_documents\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.adoption_processes",
+    "label": "Create table \"adoption_processes\"",
+    "summary": "Creates table \"adoption_processes\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "adoption_processes"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"adoption_processes\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"adoption_processes\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"adoption_processes\"",
+        "sql": "CREATE TABLE \"public\".\"adoption_processes\" (\n  \"adopterId\" int4 NOT NULL,\n  \"animalId\" int4 NOT NULL,\n  \"approvalDate\" timestamptz,\n  \"compatibilityNotes\" text,\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"deliveryDate\" timestamptz,\n  \"id\" SERIAL NOT NULL,\n  \"notes\" text,\n  \"requestDate\" timestamptz DEFAULT (now()) NOT NULL,\n  \"status\" text DEFAULT 'PRE_EVALUATION' NOT NULL,\n  \"updatedAt\" timestamptz DEFAULT (now()) NOT NULL,\n  PRIMARY KEY (\"id\"),\n  CONSTRAINT \"adoption_processes_status_check_a3e79080\" CHECK (\"status\" IN ('PRE_EVALUATION', 'APPROVED', 'REJECTED', 'IN_PROGRESS', 'COMPLETED', 'CANCELED'))\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"adoption_processes\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"adoption_processes\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.animals",
+    "label": "Create table \"animals\"",
+    "summary": "Creates table \"animals\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "animals"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"animals\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"animals\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"animals\"",
+        "sql": "CREATE TABLE \"public\".\"animals\" (\n  \"approximateAge\" text,\n  \"arrivedAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"breed\" text,\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"healthHistory\" text,\n  \"id\" SERIAL NOT NULL,\n  \"leftAt\" timestamptz,\n  \"name\" text NOT NULL,\n  \"neuterStatus\" text DEFAULT 'NOT_NEUTERED' NOT NULL,\n  \"physicalTraits\" text,\n  \"rescueConditions\" text,\n  \"rescueDate\" timestamptz DEFAULT (now()) NOT NULL,\n  \"sex\" text DEFAULT 'UNKNOWN' NOT NULL,\n  \"species\" text NOT NULL,\n  \"status\" text DEFAULT 'RESCUED' NOT NULL,\n  \"updatedAt\" timestamptz DEFAULT (now()) NOT NULL,\n  PRIMARY KEY (\"id\"),\n  CONSTRAINT \"animals_neuterStatus_check_5d2c685b\" CHECK (\"neuterStatus\" IN ('NOT_NEUTERED', 'SCHEDULED', 'NEUTERED')),\n  CONSTRAINT \"animals_sex_check_35ee12d4\" CHECK (\"sex\" IN ('MALE', 'FEMALE', 'UNKNOWN')),\n  CONSTRAINT \"animals_species_check_bc68df6f\" CHECK (\"species\" IN ('DOG', 'CAT', 'OTHER')),\n  CONSTRAINT \"animals_status_check_4d83131b\" CHECK (\"status\" IN ('RESCUED', 'IN_TREATMENT', 'QUARANTINE', 'AVAILABLE_FOR_ADOPTION', 'ADOPTED', 'DECEASED'))\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"animals\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"animals\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.attachments",
+    "label": "Create table \"attachments\"",
+    "summary": "Creates table \"attachments\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "attachments"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"attachments\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"attachments\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"attachments\"",
+        "sql": "CREATE TABLE \"public\".\"attachments\" (\n  \"animalId\" int4 NOT NULL,\n  \"description\" text,\n  \"id\" SERIAL NOT NULL,\n  \"type\" text NOT NULL,\n  \"uploadedAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"url\" text NOT NULL,\n  PRIMARY KEY (\"id\"),\n  CONSTRAINT \"attachments_type_check_883f763b\" CHECK (\"type\" IN ('PHOTO', 'VET_REPORT', 'OTHER'))\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"attachments\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"attachments\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.donations",
+    "label": "Create table \"donations\"",
+    "summary": "Creates table \"donations\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "donations"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"donations\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"donations\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"donations\"",
+        "sql": "CREATE TABLE \"public\".\"donations\" (\n  \"date\" timestamptz DEFAULT (now()) NOT NULL,\n  \"description\" text,\n  \"donorContact\" text,\n  \"donorName\" text,\n  \"id\" SERIAL NOT NULL,\n  \"notes\" text,\n  \"quantity\" float8,\n  \"type\" text NOT NULL,\n  \"unit\" text,\n  \"value\" float8,\n  PRIMARY KEY (\"id\"),\n  CONSTRAINT \"donations_type_check_d8327d70\" CHECK (\"type\" IN ('MONEY', 'FOOD', 'MEDICINE', 'HYGIENE', 'MATERIAL', 'OTHER'))\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"donations\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"donations\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.inventory_items",
+    "label": "Create table \"inventory_items\"",
+    "summary": "Creates table \"inventory_items\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "inventory_items"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"inventory_items\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"inventory_items\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"inventory_items\"",
+        "sql": "CREATE TABLE \"public\".\"inventory_items\" (\n  \"category\" text NOT NULL,\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"id\" SERIAL NOT NULL,\n  \"minThreshold\" float8,\n  \"name\" text NOT NULL,\n  \"quantity\" float8 DEFAULT 0 NOT NULL,\n  \"unit\" text NOT NULL,\n  \"updatedAt\" timestamptz DEFAULT (now()) NOT NULL,\n  PRIMARY KEY (\"id\"),\n  CONSTRAINT \"inventory_items_category_check_2d8e1bca\" CHECK (\"category\" IN ('FOOD', 'MEDICINE', 'HYGIENE', 'MATERIAL', 'OTHER'))\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"inventory_items\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"inventory_items\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.medical_records",
+    "label": "Create table \"medical_records\"",
+    "summary": "Creates table \"medical_records\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "medical_records"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"medical_records\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"medical_records\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"medical_records\"",
+        "sql": "CREATE TABLE \"public\".\"medical_records\" (\n  \"animalId\" int4 NOT NULL,\n  \"clinic\" text,\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"date\" timestamptz NOT NULL,\n  \"description\" text NOT NULL,\n  \"id\" SERIAL NOT NULL,\n  \"notes\" text,\n  \"type\" text NOT NULL,\n  \"veterinarian\" text,\n  PRIMARY KEY (\"id\"),\n  CONSTRAINT \"medical_records_type_check_36d7dc0a\" CHECK (\"type\" IN ('CONSULTATION', 'TREATMENT', 'MEDICATION', 'EXAM'))\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"medical_records\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"medical_records\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.notifications",
+    "label": "Create table \"notifications\"",
+    "summary": "Creates table \"notifications\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "notifications"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"notifications\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"notifications\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"notifications\"",
+        "sql": "CREATE TABLE \"public\".\"notifications\" (\n  \"adoptionProcessId\" int4,\n  \"animalId\" int4,\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"id\" SERIAL NOT NULL,\n  \"message\" text NOT NULL,\n  \"read\" bool DEFAULT false NOT NULL,\n  \"scheduledFor\" timestamptz,\n  \"title\" text NOT NULL,\n  \"type\" text NOT NULL,\n  PRIMARY KEY (\"id\"),\n  CONSTRAINT \"notifications_type_check_ee3ebcf7\" CHECK (\"type\" IN ('NEW_RESCUE', 'VACCINE_REMINDER', 'VET_FOLLOWUP', 'MEDICATION_REMINDER', 'CRITICAL_ANIMAL', 'ADOPTION_UPDATE', 'DONATION_CAMPAIGN'))\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"notifications\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"notifications\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.resource_usages",
+    "label": "Create table \"resource_usages\"",
+    "summary": "Creates table \"resource_usages\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "resource_usages"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"resource_usages\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"resource_usages\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"resource_usages\"",
+        "sql": "CREATE TABLE \"public\".\"resource_usages\" (\n  \"animalId\" int4,\n  \"date\" timestamptz DEFAULT (now()) NOT NULL,\n  \"id\" SERIAL NOT NULL,\n  \"inventoryItemId\" int4 NOT NULL,\n  \"notes\" text,\n  \"quantityUsed\" float8 NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"resource_usages\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"resource_usages\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.surgeries",
+    "label": "Create table \"surgeries\"",
+    "summary": "Creates table \"surgeries\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "surgeries"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"surgeries\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"surgeries\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"surgeries\"",
+        "sql": "CREATE TABLE \"public\".\"surgeries\" (\n  \"animalId\" int4 NOT NULL,\n  \"clinic\" text,\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"id\" SERIAL NOT NULL,\n  \"notes\" text,\n  \"performedDate\" timestamptz,\n  \"scheduledDate\" timestamptz,\n  \"status\" text DEFAULT 'SCHEDULED' NOT NULL,\n  \"type\" text NOT NULL,\n  \"veterinarian\" text,\n  PRIMARY KEY (\"id\"),\n  CONSTRAINT \"surgeries_status_check_78cb05f7\" CHECK (\"status\" IN ('SCHEDULED', 'COMPLETED', 'CANCELED')),\n  CONSTRAINT \"surgeries_type_check_e687e185\" CHECK (\"type\" IN ('CASTRATION', 'RECONSTRUCTIVE', 'EMERGENCY', 'OTHER'))\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"surgeries\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"surgeries\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.users",
+    "label": "Create table \"users\"",
+    "summary": "Creates table \"users\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "users"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"users\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"users\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"users\"",
+        "sql": "CREATE TABLE \"public\".\"users\" (\n  \"active\" bool DEFAULT true NOT NULL,\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"email\" text NOT NULL,\n  \"id\" SERIAL NOT NULL,\n  \"name\" text NOT NULL,\n  \"passwordHash\" text NOT NULL,\n  \"role\" text DEFAULT 'STAFF' NOT NULL,\n  PRIMARY KEY (\"id\"),\n  CONSTRAINT \"users_role_check_9882e4e8\" CHECK (\"role\" IN ('ADMIN', 'STAFF', 'VET', 'VOLUNTEER'))\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"users\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"users\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.vaccinations",
+    "label": "Create table \"vaccinations\"",
+    "summary": "Creates table \"vaccinations\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "vaccinations"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"vaccinations\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"vaccinations\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"vaccinations\"",
+        "sql": "CREATE TABLE \"public\".\"vaccinations\" (\n  \"animalId\" int4 NOT NULL,\n  \"applicationDate\" timestamptz NOT NULL,\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"id\" SERIAL NOT NULL,\n  \"nextDoseDate\" timestamptz,\n  \"notes\" text,\n  \"vaccineName\" text NOT NULL,\n  \"veterinarian\" text,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"vaccinations\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"vaccinations\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.volunteers",
+    "label": "Create table \"volunteers\"",
+    "summary": "Creates table \"volunteers\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "volunteers"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"volunteers\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"volunteers\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"volunteers\"",
+        "sql": "CREATE TABLE \"public\".\"volunteers\" (\n  \"availability\" text,\n  \"email\" text,\n  \"id\" SERIAL NOT NULL,\n  \"joinedAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"name\" text NOT NULL,\n  \"phone\" text NOT NULL,\n  \"role\" text,\n  \"status\" text DEFAULT 'ACTIVE' NOT NULL,\n  PRIMARY KEY (\"id\"),\n  CONSTRAINT \"volunteers_status_check_ee520df2\" CHECK (\"status\" IN ('ACTIVE', 'INACTIVE'))\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"volunteers\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"volunteers\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.adopters.adopters_cpf_key",
+    "label": "Add unique constraint on \"adopters\" (cpf)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "adopters_cpf_key",
+        "table": "adopters"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"adopters_cpf_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "adopters_cpf_key",
+          "public",
+          "\"public\".\"adopters\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"adopters_cpf_key\"",
+        "sql": "ALTER TABLE \"public\".\"adopters\" ADD CONSTRAINT \"adopters_cpf_key\" UNIQUE (\"cpf\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"adopters_cpf_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "adopters_cpf_key",
+          "public",
+          "\"public\".\"adopters\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.users.users_email_key",
+    "label": "Add unique constraint on \"users\" (email)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "users_email_key",
+        "table": "users"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"users_email_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "users_email_key",
+          "public",
+          "\"public\".\"users\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"users_email_key\"",
+        "sql": "ALTER TABLE \"public\".\"users\" ADD CONSTRAINT \"users_email_key\" UNIQUE (\"email\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"users_email_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "users_email_key",
+          "public",
+          "\"public\".\"users\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.volunteers.volunteers_email_key",
+    "label": "Add unique constraint on \"volunteers\" (email)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "volunteers_email_key",
+        "table": "volunteers"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"volunteers_email_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "volunteers_email_key",
+          "public",
+          "\"public\".\"volunteers\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"volunteers_email_key\"",
+        "sql": "ALTER TABLE \"public\".\"volunteers\" ADD CONSTRAINT \"volunteers_email_key\" UNIQUE (\"email\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"volunteers_email_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "volunteers_email_key",
+          "public",
+          "\"public\".\"volunteers\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.adoption_documents.adoption_documents_adoptionProcessId_idx_25903e92",
+    "label": "Create index \"adoption_documents_adoptionProcessId_idx_25903e92\" on \"adoption_documents\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "adoption_documents_adoptionProcessId_idx_25903e92",
+        "table": "adoption_documents"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"adoption_documents_adoptionProcessId_idx_25903e92\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"adoption_documents_adoptionProcessId_idx_25903e92\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"adoption_documents_adoptionProcessId_idx_25903e92\"",
+        "sql": "CREATE INDEX \"adoption_documents_adoptionProcessId_idx_25903e92\" ON \"public\".\"adoption_documents\" (\"adoptionProcessId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"adoption_documents_adoptionProcessId_idx_25903e92\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"adoption_documents_adoptionProcessId_idx_25903e92\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.adoption_processes.adoption_processes_adopterId_idx_f6ab36c2",
+    "label": "Create index \"adoption_processes_adopterId_idx_f6ab36c2\" on \"adoption_processes\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "adoption_processes_adopterId_idx_f6ab36c2",
+        "table": "adoption_processes"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"adoption_processes_adopterId_idx_f6ab36c2\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"adoption_processes_adopterId_idx_f6ab36c2\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"adoption_processes_adopterId_idx_f6ab36c2\"",
+        "sql": "CREATE INDEX \"adoption_processes_adopterId_idx_f6ab36c2\" ON \"public\".\"adoption_processes\" (\"adopterId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"adoption_processes_adopterId_idx_f6ab36c2\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"adoption_processes_adopterId_idx_f6ab36c2\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.adoption_processes.adoption_processes_animalId_idx_ffe1386b",
+    "label": "Create index \"adoption_processes_animalId_idx_ffe1386b\" on \"adoption_processes\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "adoption_processes_animalId_idx_ffe1386b",
+        "table": "adoption_processes"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"adoption_processes_animalId_idx_ffe1386b\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"adoption_processes_animalId_idx_ffe1386b\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"adoption_processes_animalId_idx_ffe1386b\"",
+        "sql": "CREATE INDEX \"adoption_processes_animalId_idx_ffe1386b\" ON \"public\".\"adoption_processes\" (\"animalId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"adoption_processes_animalId_idx_ffe1386b\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"adoption_processes_animalId_idx_ffe1386b\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.adoption_processes.adoption_processes_status_idx_e98638ab",
+    "label": "Create index \"adoption_processes_status_idx_e98638ab\" on \"adoption_processes\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "adoption_processes_status_idx_e98638ab",
+        "table": "adoption_processes"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"adoption_processes_status_idx_e98638ab\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"adoption_processes_status_idx_e98638ab\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"adoption_processes_status_idx_e98638ab\"",
+        "sql": "CREATE INDEX \"adoption_processes_status_idx_e98638ab\" ON \"public\".\"adoption_processes\" (\"status\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"adoption_processes_status_idx_e98638ab\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"adoption_processes_status_idx_e98638ab\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.animals.animals_neuterStatus_idx_7bfaa38f",
+    "label": "Create index \"animals_neuterStatus_idx_7bfaa38f\" on \"animals\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "animals_neuterStatus_idx_7bfaa38f",
+        "table": "animals"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"animals_neuterStatus_idx_7bfaa38f\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"animals_neuterStatus_idx_7bfaa38f\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"animals_neuterStatus_idx_7bfaa38f\"",
+        "sql": "CREATE INDEX \"animals_neuterStatus_idx_7bfaa38f\" ON \"public\".\"animals\" (\"neuterStatus\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"animals_neuterStatus_idx_7bfaa38f\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"animals_neuterStatus_idx_7bfaa38f\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.animals.animals_rescueDate_idx_4b8de02b",
+    "label": "Create index \"animals_rescueDate_idx_4b8de02b\" on \"animals\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "animals_rescueDate_idx_4b8de02b",
+        "table": "animals"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"animals_rescueDate_idx_4b8de02b\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"animals_rescueDate_idx_4b8de02b\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"animals_rescueDate_idx_4b8de02b\"",
+        "sql": "CREATE INDEX \"animals_rescueDate_idx_4b8de02b\" ON \"public\".\"animals\" (\"rescueDate\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"animals_rescueDate_idx_4b8de02b\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"animals_rescueDate_idx_4b8de02b\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.animals.animals_status_idx_e98638ab",
+    "label": "Create index \"animals_status_idx_e98638ab\" on \"animals\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "animals_status_idx_e98638ab",
+        "table": "animals"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"animals_status_idx_e98638ab\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"animals_status_idx_e98638ab\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"animals_status_idx_e98638ab\"",
+        "sql": "CREATE INDEX \"animals_status_idx_e98638ab\" ON \"public\".\"animals\" (\"status\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"animals_status_idx_e98638ab\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"animals_status_idx_e98638ab\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.attachments.attachments_animalId_idx_ffe1386b",
+    "label": "Create index \"attachments_animalId_idx_ffe1386b\" on \"attachments\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "attachments_animalId_idx_ffe1386b",
+        "table": "attachments"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"attachments_animalId_idx_ffe1386b\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"attachments_animalId_idx_ffe1386b\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"attachments_animalId_idx_ffe1386b\"",
+        "sql": "CREATE INDEX \"attachments_animalId_idx_ffe1386b\" ON \"public\".\"attachments\" (\"animalId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"attachments_animalId_idx_ffe1386b\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"attachments_animalId_idx_ffe1386b\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.donations.donations_date_idx_b4ca319c",
+    "label": "Create index \"donations_date_idx_b4ca319c\" on \"donations\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "donations_date_idx_b4ca319c",
+        "table": "donations"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"donations_date_idx_b4ca319c\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"donations_date_idx_b4ca319c\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"donations_date_idx_b4ca319c\"",
+        "sql": "CREATE INDEX \"donations_date_idx_b4ca319c\" ON \"public\".\"donations\" (\"date\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"donations_date_idx_b4ca319c\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"donations_date_idx_b4ca319c\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.donations.donations_type_idx_b6b604ea",
+    "label": "Create index \"donations_type_idx_b6b604ea\" on \"donations\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "donations_type_idx_b6b604ea",
+        "table": "donations"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"donations_type_idx_b6b604ea\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"donations_type_idx_b6b604ea\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"donations_type_idx_b6b604ea\"",
+        "sql": "CREATE INDEX \"donations_type_idx_b6b604ea\" ON \"public\".\"donations\" (\"type\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"donations_type_idx_b6b604ea\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"donations_type_idx_b6b604ea\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.medical_records.medical_records_animalId_idx_ffe1386b",
+    "label": "Create index \"medical_records_animalId_idx_ffe1386b\" on \"medical_records\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "medical_records_animalId_idx_ffe1386b",
+        "table": "medical_records"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"medical_records_animalId_idx_ffe1386b\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"medical_records_animalId_idx_ffe1386b\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"medical_records_animalId_idx_ffe1386b\"",
+        "sql": "CREATE INDEX \"medical_records_animalId_idx_ffe1386b\" ON \"public\".\"medical_records\" (\"animalId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"medical_records_animalId_idx_ffe1386b\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"medical_records_animalId_idx_ffe1386b\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.medical_records.medical_records_date_idx_b4ca319c",
+    "label": "Create index \"medical_records_date_idx_b4ca319c\" on \"medical_records\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "medical_records_date_idx_b4ca319c",
+        "table": "medical_records"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"medical_records_date_idx_b4ca319c\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"medical_records_date_idx_b4ca319c\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"medical_records_date_idx_b4ca319c\"",
+        "sql": "CREATE INDEX \"medical_records_date_idx_b4ca319c\" ON \"public\".\"medical_records\" (\"date\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"medical_records_date_idx_b4ca319c\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"medical_records_date_idx_b4ca319c\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.notifications.notifications_adoptionProcessId_idx_25903e92",
+    "label": "Create index \"notifications_adoptionProcessId_idx_25903e92\" on \"notifications\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "notifications_adoptionProcessId_idx_25903e92",
+        "table": "notifications"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"notifications_adoptionProcessId_idx_25903e92\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"notifications_adoptionProcessId_idx_25903e92\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"notifications_adoptionProcessId_idx_25903e92\"",
+        "sql": "CREATE INDEX \"notifications_adoptionProcessId_idx_25903e92\" ON \"public\".\"notifications\" (\"adoptionProcessId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"notifications_adoptionProcessId_idx_25903e92\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"notifications_adoptionProcessId_idx_25903e92\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.notifications.notifications_animalId_idx_ffe1386b",
+    "label": "Create index \"notifications_animalId_idx_ffe1386b\" on \"notifications\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "notifications_animalId_idx_ffe1386b",
+        "table": "notifications"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"notifications_animalId_idx_ffe1386b\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"notifications_animalId_idx_ffe1386b\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"notifications_animalId_idx_ffe1386b\"",
+        "sql": "CREATE INDEX \"notifications_animalId_idx_ffe1386b\" ON \"public\".\"notifications\" (\"animalId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"notifications_animalId_idx_ffe1386b\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"notifications_animalId_idx_ffe1386b\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.notifications.notifications_read_idx_38171f9c",
+    "label": "Create index \"notifications_read_idx_38171f9c\" on \"notifications\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "notifications_read_idx_38171f9c",
+        "table": "notifications"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"notifications_read_idx_38171f9c\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"notifications_read_idx_38171f9c\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"notifications_read_idx_38171f9c\"",
+        "sql": "CREATE INDEX \"notifications_read_idx_38171f9c\" ON \"public\".\"notifications\" (\"read\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"notifications_read_idx_38171f9c\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"notifications_read_idx_38171f9c\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.notifications.notifications_type_idx_b6b604ea",
+    "label": "Create index \"notifications_type_idx_b6b604ea\" on \"notifications\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "notifications_type_idx_b6b604ea",
+        "table": "notifications"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"notifications_type_idx_b6b604ea\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"notifications_type_idx_b6b604ea\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"notifications_type_idx_b6b604ea\"",
+        "sql": "CREATE INDEX \"notifications_type_idx_b6b604ea\" ON \"public\".\"notifications\" (\"type\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"notifications_type_idx_b6b604ea\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"notifications_type_idx_b6b604ea\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.resource_usages.resource_usages_animalId_idx_ffe1386b",
+    "label": "Create index \"resource_usages_animalId_idx_ffe1386b\" on \"resource_usages\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "resource_usages_animalId_idx_ffe1386b",
+        "table": "resource_usages"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"resource_usages_animalId_idx_ffe1386b\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"resource_usages_animalId_idx_ffe1386b\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"resource_usages_animalId_idx_ffe1386b\"",
+        "sql": "CREATE INDEX \"resource_usages_animalId_idx_ffe1386b\" ON \"public\".\"resource_usages\" (\"animalId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"resource_usages_animalId_idx_ffe1386b\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"resource_usages_animalId_idx_ffe1386b\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.resource_usages.resource_usages_inventoryItemId_idx_ddbb7ccf",
+    "label": "Create index \"resource_usages_inventoryItemId_idx_ddbb7ccf\" on \"resource_usages\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "resource_usages_inventoryItemId_idx_ddbb7ccf",
+        "table": "resource_usages"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"resource_usages_inventoryItemId_idx_ddbb7ccf\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"resource_usages_inventoryItemId_idx_ddbb7ccf\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"resource_usages_inventoryItemId_idx_ddbb7ccf\"",
+        "sql": "CREATE INDEX \"resource_usages_inventoryItemId_idx_ddbb7ccf\" ON \"public\".\"resource_usages\" (\"inventoryItemId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"resource_usages_inventoryItemId_idx_ddbb7ccf\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"resource_usages_inventoryItemId_idx_ddbb7ccf\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.surgeries.surgeries_animalId_idx_ffe1386b",
+    "label": "Create index \"surgeries_animalId_idx_ffe1386b\" on \"surgeries\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "surgeries_animalId_idx_ffe1386b",
+        "table": "surgeries"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"surgeries_animalId_idx_ffe1386b\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"surgeries_animalId_idx_ffe1386b\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"surgeries_animalId_idx_ffe1386b\"",
+        "sql": "CREATE INDEX \"surgeries_animalId_idx_ffe1386b\" ON \"public\".\"surgeries\" (\"animalId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"surgeries_animalId_idx_ffe1386b\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"surgeries_animalId_idx_ffe1386b\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.surgeries.surgeries_type_status_idx_f045f361",
+    "label": "Create index \"surgeries_type_status_idx_f045f361\" on \"surgeries\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "surgeries_type_status_idx_f045f361",
+        "table": "surgeries"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"surgeries_type_status_idx_f045f361\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"surgeries_type_status_idx_f045f361\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"surgeries_type_status_idx_f045f361\"",
+        "sql": "CREATE INDEX \"surgeries_type_status_idx_f045f361\" ON \"public\".\"surgeries\" (\"type\", \"status\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"surgeries_type_status_idx_f045f361\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"surgeries_type_status_idx_f045f361\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.vaccinations.vaccinations_animalId_idx_ffe1386b",
+    "label": "Create index \"vaccinations_animalId_idx_ffe1386b\" on \"vaccinations\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "vaccinations_animalId_idx_ffe1386b",
+        "table": "vaccinations"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"vaccinations_animalId_idx_ffe1386b\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"vaccinations_animalId_idx_ffe1386b\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"vaccinations_animalId_idx_ffe1386b\"",
+        "sql": "CREATE INDEX \"vaccinations_animalId_idx_ffe1386b\" ON \"public\".\"vaccinations\" (\"animalId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"vaccinations_animalId_idx_ffe1386b\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"vaccinations_animalId_idx_ffe1386b\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.vaccinations.vaccinations_nextDoseDate_idx_64695c8b",
+    "label": "Create index \"vaccinations_nextDoseDate_idx_64695c8b\" on \"vaccinations\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "vaccinations_nextDoseDate_idx_64695c8b",
+        "table": "vaccinations"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"vaccinations_nextDoseDate_idx_64695c8b\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"vaccinations_nextDoseDate_idx_64695c8b\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"vaccinations_nextDoseDate_idx_64695c8b\"",
+        "sql": "CREATE INDEX \"vaccinations_nextDoseDate_idx_64695c8b\" ON \"public\".\"vaccinations\" (\"nextDoseDate\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"vaccinations_nextDoseDate_idx_64695c8b\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"vaccinations_nextDoseDate_idx_64695c8b\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.adoption_documents.adoption_documents_adoptionProcessId_fkey",
+    "label": "Add foreign key \"adoption_documents_adoptionProcessId_fkey\" on \"adoption_documents\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "adoption_documents_adoptionProcessId_fkey",
+        "table": "adoption_documents"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"adoption_documents_adoptionProcessId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "adoption_documents_adoptionProcessId_fkey",
+          "public",
+          "\"public\".\"adoption_documents\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"adoption_documents_adoptionProcessId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"adoption_documents\"\nADD CONSTRAINT \"adoption_documents_adoptionProcessId_fkey\"\nFOREIGN KEY (\"adoptionProcessId\")\nREFERENCES \"public\".\"adoption_processes\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"adoption_documents_adoptionProcessId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "adoption_documents_adoptionProcessId_fkey",
+          "public",
+          "\"public\".\"adoption_documents\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.adoption_processes.adoption_processes_animalId_fkey",
+    "label": "Add foreign key \"adoption_processes_animalId_fkey\" on \"adoption_processes\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "adoption_processes_animalId_fkey",
+        "table": "adoption_processes"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"adoption_processes_animalId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "adoption_processes_animalId_fkey",
+          "public",
+          "\"public\".\"adoption_processes\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"adoption_processes_animalId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"adoption_processes\"\nADD CONSTRAINT \"adoption_processes_animalId_fkey\"\nFOREIGN KEY (\"animalId\")\nREFERENCES \"public\".\"animals\" (\"id\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"adoption_processes_animalId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "adoption_processes_animalId_fkey",
+          "public",
+          "\"public\".\"adoption_processes\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.adoption_processes.adoption_processes_adopterId_fkey",
+    "label": "Add foreign key \"adoption_processes_adopterId_fkey\" on \"adoption_processes\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "adoption_processes_adopterId_fkey",
+        "table": "adoption_processes"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"adoption_processes_adopterId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "adoption_processes_adopterId_fkey",
+          "public",
+          "\"public\".\"adoption_processes\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"adoption_processes_adopterId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"adoption_processes\"\nADD CONSTRAINT \"adoption_processes_adopterId_fkey\"\nFOREIGN KEY (\"adopterId\")\nREFERENCES \"public\".\"adopters\" (\"id\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"adoption_processes_adopterId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "adoption_processes_adopterId_fkey",
+          "public",
+          "\"public\".\"adoption_processes\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.attachments.attachments_animalId_fkey",
+    "label": "Add foreign key \"attachments_animalId_fkey\" on \"attachments\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "attachments_animalId_fkey",
+        "table": "attachments"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"attachments_animalId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "attachments_animalId_fkey",
+          "public",
+          "\"public\".\"attachments\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"attachments_animalId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"attachments\"\nADD CONSTRAINT \"attachments_animalId_fkey\"\nFOREIGN KEY (\"animalId\")\nREFERENCES \"public\".\"animals\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"attachments_animalId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "attachments_animalId_fkey",
+          "public",
+          "\"public\".\"attachments\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.medical_records.medical_records_animalId_fkey",
+    "label": "Add foreign key \"medical_records_animalId_fkey\" on \"medical_records\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "medical_records_animalId_fkey",
+        "table": "medical_records"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"medical_records_animalId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "medical_records_animalId_fkey",
+          "public",
+          "\"public\".\"medical_records\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"medical_records_animalId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"medical_records\"\nADD CONSTRAINT \"medical_records_animalId_fkey\"\nFOREIGN KEY (\"animalId\")\nREFERENCES \"public\".\"animals\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"medical_records_animalId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "medical_records_animalId_fkey",
+          "public",
+          "\"public\".\"medical_records\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.notifications.notifications_animalId_fkey",
+    "label": "Add foreign key \"notifications_animalId_fkey\" on \"notifications\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "notifications_animalId_fkey",
+        "table": "notifications"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"notifications_animalId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "notifications_animalId_fkey",
+          "public",
+          "\"public\".\"notifications\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"notifications_animalId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"notifications\"\nADD CONSTRAINT \"notifications_animalId_fkey\"\nFOREIGN KEY (\"animalId\")\nREFERENCES \"public\".\"animals\" (\"id\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"notifications_animalId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "notifications_animalId_fkey",
+          "public",
+          "\"public\".\"notifications\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.notifications.notifications_adoptionProcessId_fkey",
+    "label": "Add foreign key \"notifications_adoptionProcessId_fkey\" on \"notifications\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "notifications_adoptionProcessId_fkey",
+        "table": "notifications"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"notifications_adoptionProcessId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "notifications_adoptionProcessId_fkey",
+          "public",
+          "\"public\".\"notifications\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"notifications_adoptionProcessId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"notifications\"\nADD CONSTRAINT \"notifications_adoptionProcessId_fkey\"\nFOREIGN KEY (\"adoptionProcessId\")\nREFERENCES \"public\".\"adoption_processes\" (\"id\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"notifications_adoptionProcessId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "notifications_adoptionProcessId_fkey",
+          "public",
+          "\"public\".\"notifications\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.resource_usages.resource_usages_animalId_fkey",
+    "label": "Add foreign key \"resource_usages_animalId_fkey\" on \"resource_usages\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "resource_usages_animalId_fkey",
+        "table": "resource_usages"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"resource_usages_animalId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "resource_usages_animalId_fkey",
+          "public",
+          "\"public\".\"resource_usages\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"resource_usages_animalId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"resource_usages\"\nADD CONSTRAINT \"resource_usages_animalId_fkey\"\nFOREIGN KEY (\"animalId\")\nREFERENCES \"public\".\"animals\" (\"id\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"resource_usages_animalId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "resource_usages_animalId_fkey",
+          "public",
+          "\"public\".\"resource_usages\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.resource_usages.resource_usages_inventoryItemId_fkey",
+    "label": "Add foreign key \"resource_usages_inventoryItemId_fkey\" on \"resource_usages\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "resource_usages_inventoryItemId_fkey",
+        "table": "resource_usages"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"resource_usages_inventoryItemId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "resource_usages_inventoryItemId_fkey",
+          "public",
+          "\"public\".\"resource_usages\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"resource_usages_inventoryItemId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"resource_usages\"\nADD CONSTRAINT \"resource_usages_inventoryItemId_fkey\"\nFOREIGN KEY (\"inventoryItemId\")\nREFERENCES \"public\".\"inventory_items\" (\"id\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"resource_usages_inventoryItemId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "resource_usages_inventoryItemId_fkey",
+          "public",
+          "\"public\".\"resource_usages\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.surgeries.surgeries_animalId_fkey",
+    "label": "Add foreign key \"surgeries_animalId_fkey\" on \"surgeries\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "surgeries_animalId_fkey",
+        "table": "surgeries"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"surgeries_animalId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "surgeries_animalId_fkey",
+          "public",
+          "\"public\".\"surgeries\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"surgeries_animalId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"surgeries\"\nADD CONSTRAINT \"surgeries_animalId_fkey\"\nFOREIGN KEY (\"animalId\")\nREFERENCES \"public\".\"animals\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"surgeries_animalId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "surgeries_animalId_fkey",
+          "public",
+          "\"public\".\"surgeries\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.vaccinations.vaccinations_animalId_fkey",
+    "label": "Add foreign key \"vaccinations_animalId_fkey\" on \"vaccinations\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "vaccinations_animalId_fkey",
+        "table": "vaccinations"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"vaccinations_animalId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "vaccinations_animalId_fkey",
+          "public",
+          "\"public\".\"vaccinations\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"vaccinations_animalId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"vaccinations\"\nADD CONSTRAINT \"vaccinations_animalId_fkey\"\nFOREIGN KEY (\"animalId\")\nREFERENCES \"public\".\"animals\" (\"id\")\nON DELETE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"vaccinations_animalId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "vaccinations_animalId_fkey",
+          "public",
+          "\"public\".\"vaccinations\""
+        ]
+      }
+    ]
+  }
+]
